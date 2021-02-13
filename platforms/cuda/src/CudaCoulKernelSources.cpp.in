@@ -1,0 +1,4 @@
+#include "CudaCoulKernelSources.h"
+
+using namespace CoulPlugin;
+using namespace std;
