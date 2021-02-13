@@ -68,6 +68,44 @@ double CoulForce::getEwaldErrorTolerance() const{
     return ewaldTol;
 }
 
+void CoulForce::addFluxBond(int p1, int p2, double k, double b){
+    fbond_idx.push_back(p1);
+    fbond_idx.push_back(p2);
+    fbond_params.push_back(k);
+    fbond_params.push_back(b);
+}
+
+void CoulForce::getFluxBondParameters(int index, int& p1, int& p2, double& k, double& b) const{
+    p1 = fbond_idx[2*index];
+    p2 = fbond_idx[2*index+1];
+    k = fbond_params[2*index];
+    b = fbond_params[2*index+1];
+}
+
+int CoulForce::getNumFluxBonds() const{
+    return fbond_idx.size()/2;
+}
+
+void CoulForce::addFluxAngle(int p1, int p2, int p3, double k, double theta){
+    fangle_idx.push_back(p1);
+    fangle_idx.push_back(p2);
+    fangle_idx.push_back(p3);
+    fangle_params.push_back(k);
+    fangle_params.push_back(theta);
+}
+
+void CoulForce::getFluxAngleParameters(int index, int& p1, int& p2, int& p3, double& k, double& theta) const{
+    p1 = fangle_idx[3*index];
+    p2 = fangle_idx[3*index+1];
+    p3 = fangle_idx[3*index+2];
+    k = fangle_params[2*index];
+    theta = fangle_params[2*index+1];
+}
+
+int CoulForce::getNumFluxAngles() const{
+    return fangle_idx.size() / 3;
+}
+
 ForceImpl* CoulForce::createImpl() const {
     return new CoulForceImpl(*this);
 }

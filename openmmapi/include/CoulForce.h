@@ -91,12 +91,44 @@ public:
      * @return                Ewald tolerance
      */
     double getEwaldErrorTolerance() const;
+    /**
+     * Add a charge-flux bond
+     * @param p1
+     * @param p2
+     * @param k
+     * @param b
+     */
+    void addFluxBond(int p1, int p2, double k, double b);
+    /**
+     * Get parameter of charge-flux bond
+     */
+    void getFluxBondParameters(int index, int& p1, int& p2, double& k, double& b) const;
+    /**
+     * Get number of charge-flux bond
+     */
+    int getNumFluxBonds() const;
+    /**
+     * Add charge-flux angle
+     */
+    void addFluxAngle(int p1, int p2, int p3, double k, double theta);
+    /**
+     * Get parameters of charge-flux angle
+     */
+    void getFluxAngleParameters(int index, int& p1, int& p2, int& p3, double& k, double& theta) const;
+    /**
+     * Get number of charge-flux angle
+     */
+    int getNumFluxAngles() const;
 
 protected:
     OpenMM::ForceImpl* createImpl() const;
 private:
     std::vector<std::pair<int,int>> exclusions;
     std::vector<double> charges;
+    std::vector<int> fbond_idx;
+    std::vector<double> fbond_params;
+    std::vector<int> fangle_idx;
+    std::vector<double> fangle_params;
     double cutoffDistance;
     double ewaldTol;
     bool ifPBC;

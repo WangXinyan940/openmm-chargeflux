@@ -34,6 +34,8 @@ public:
      * @return the potential energy due to the force
      */
     double execute(OpenMM::ContextImpl& context, bool includeForces, bool includeEnergy);
+
+    void updateRealCharge(vector<Vec3>& pos, Vec3* box);
 private:
     double cutoff;
     std::vector<double> charges;
@@ -41,6 +43,13 @@ private:
     double ewaldTol, alpha, one_alpha2;
     bool ifPBC;
     int kmaxx, kmaxy, kmaxz;
+    std::vector<double> realcharges;
+    int numCFBonds;
+    std::vector<int> fbond_idx;
+    std::vector<double> fbond_params;
+    int numCFAngles;
+    std::vector<int> fangle_idx;
+    std::vector<double> fangle_params;
     OpenMM::NeighborList* neighborList;
 };
 

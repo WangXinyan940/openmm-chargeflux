@@ -34,12 +34,102 @@ static double getEwaldParamValue(int kmax, double width, double alpha){
     return 0.05 * sqrt(width * alpha) * kmax * exp(- temp * temp);
 }
 
+void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box){
+    for(int ii=0;ii<charges.size();ii++){
+        realcharges[ii] = charges[ii];
+    }
+    vector<double> deltaR1, deltaR2;
+    for(int ii=0;ii<numCFBonds;ii++){
+        // dc1 = k * (v21 - b)
+        // dc2 = - k * (v21 - b)
+        int p1 = fbond_idx[2*ii]; // O
+        int p2 = fbond_idx[2*ii+1]; // H
+        double k = fbond_params[2*ii];
+        double b = fbond_params[2*ii+1];
+        // calc r
+        // delta p1 -> p2
+        if (!ifPBC){
+            Vec3 delta = ReferenceForce::getDeltaR(pos[p1], pos[p2]);
+        } else {
+            Vec3 delta = ReferenceForce::getDeltaRPeriodic(pos[p1], pos[p2], box);
+        }
+        double r2 = delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2];
+        double r = sqrt(r2);
+        // do something on dq
+        double dq = k * (r - b);
+        realcharges[p1] += dq;
+        realcharges[p2] -= dq;
+    }
+    for(int ii=0;ii<numCFAngles;ii++){
+        // angle 1-2-3
+        // dc1 = k * (a123 - theta)
+        // dc3 = k * (a123 - theta)
+        // dc2 = - dc1 - dc3
+        int p1 = fangle_idx[3*ii];
+        int p2 = fangle_idx[3*ii+1];
+        int p3 = fangle_idx[3*ii+2];
+        double k = fangle_params[2*ii];
+        double theta = fangle_params[2*ii+1];
+        // calc 2 vectors
+        if (!ifPBC){
+            Vec3 d21 = ReferenceForce::getDeltaR(pos[p2], pos[p1]);
+            Vec3 d23 = ReferenceForce::getDeltaR(pos[p2], pos[p3]);
+            Vec3 d13 = ReferenceForce::getDeltaR(pos[p1], pos[p3]);
+        } else {
+            Vec3 d21 = ReferenceForce::getDeltaRPeriodic(pos[p2], pos[p1], box);
+            Vec3 d23 = ReferenceForce::getDeltaRPeriodic(pos[p2], pos[p3], box);
+            Vec3 d13 = ReferenceForce::getDeltaRPeriodic(pos[p1], pos[p3], box);
+        }
+        double r21_2 = d21[0] * d21[0] + d21[1] * d21[1] + d21[2] * d21[2];
+        double r23_2 = d23[0] * d23[0] + d23[1] * d23[1] + d23[2] * d23[2];
+        double r13_2 = d13[0] * d13[0] + d13[1] * d13[1] + d13[2] * d13[2];
+        double r21 = sqrt(r21_2);
+        double r23 = sqrt(r23_2);
+        double r13 = sqrt(r13_2);
+        // calc angle
+        double angle = acos((r23_2 + r21_2 - r13_2) / 2 / r21 / r23);
+        // do something on dq
+        double dq = k * (angle - theta);
+        realcharges[p1] += dq;
+        realcharges[p3] += dq;
+        realcharges[p2] -= 2 * dq;
+    }
+}
+
 void ReferenceCalcCoulForceKernel::initialize(const System& system, const CoulForce& force) {
     int numParticles = system.getNumParticles();
     charges.resize(numParticles);
     for(int i=0;i<numParticles;i++){
         charges[i] = force.getParticleCharge(i);
     }
+    realcharges.resize(numParticles);
+    numCFBonds = force.getNumFluxBonds();
+    fbond_idx.resize(numCFBonds*2);
+    fbond_params.resize(numCFBonds*2);
+    for(int ii=0;ii<numCFBonds;ii++){
+        int p1, p2;
+        double k, b;
+        force.getFluxBondParameters(ii, p1, p2, k, b);
+        fbond_idx[2*ii] = p1;
+        fbond_idx[2*ii+1] = p2;
+        fbond_params[2*ii] = k;
+        fbond_params[2*ii+1] = b;
+    }
+
+    numCFAngles = force.getNumFluxAngles();
+    fangle_idx.resize(numCFAngles*3);
+    fangle_params.resize(numCFAngles*2);
+    for(int ii=0;ii<numCFAngles;ii++){
+        int p1, p2, p3;
+        double k, theta;
+        force.getFluxAngleParameters(ii, p1, p2, p3, k, theta);
+        fangle_idx[3*ii] = p1;
+        fangle_idx[3*ii+1] = p2;
+        fangle_idx[3*ii+2] = p3;
+        fangle_params[2*ii] = k;
+        fangle_params[2*ii+1] = theta;
+    }
+
     exclusions.resize(numParticles);
     for(int ii=0;ii<force.getNumExceptions();ii++){
         int p1, p2;
@@ -47,6 +137,7 @@ void ReferenceCalcCoulForceKernel::initialize(const System& system, const CoulFo
         exclusions[p1].insert(p2);
         exclusions[p2].insert(p1);
     }
+
 
     ifPBC = force.usesPeriodicBoundaryConditions();
     if (ifPBC){
@@ -83,6 +174,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
     vector<Vec3>& forces = extractForces(context);
     Vec3* box = extractBoxVectors(context);
     int numParticles = pos.size();
+    updateRealCharge(pos, box);
     double energy = 0.0;    
     double dEdR;
     vector<double> deltaR;
@@ -94,10 +186,10 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                 ReferenceForce::getDeltaR(pos[ii], pos[jj], &deltaR[0]);
                 double inverseR = 1.0 / deltaR[4];
                 if (includeEnergy) {
-                    energy += ONE_4PI_EPS0*charges[ii]*charges[jj]*inverseR;
+                    energy += ONE_4PI_EPS0*realcharges[ii]*realcharges[jj]*inverseR;
                 }
                 if (includeForces) {
-                    dEdR = ONE_4PI_EPS0*charges[ii]*charges[jj]*inverseR*inverseR*inverseR;
+                    dEdR = ONE_4PI_EPS0*realcharges[ii]*realcharges[jj]*inverseR*inverseR*inverseR;
                     for(int dd=0;dd<3;dd++){
                         forces[ii][dd] -= dEdR*deltaR[dd];
                         forces[jj][dd] += dEdR*deltaR[dd];
@@ -113,10 +205,10 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                     ReferenceForce::getDeltaR(pos[p1], pos[p2], &deltaR[0]);
                     double inverseR = 1.0 / deltaR[4];
                     if (includeEnergy) {
-                        energy -= ONE_4PI_EPS0*charges[p1]*charges[p2]*inverseR;
+                        energy -= ONE_4PI_EPS0*realcharges[p1]*realcharges[p2]*inverseR;
                     }
                     if (includeForces) {
-                        dEdR = ONE_4PI_EPS0*charges[p1]*charges[p2]*inverseR*inverseR*inverseR;
+                        dEdR = ONE_4PI_EPS0*realcharges[p1]*realcharges[p2]*inverseR*inverseR*inverseR;
                         for(int dd=0;dd<3;dd++){
                             forces[p1][dd] += dEdR*deltaR[dd];
                             forces[p2][dd] -= dEdR*deltaR[dd];
@@ -133,7 +225,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
         double realSpaceEwaldEnergy = 0.0;
         double realSpaceException = 0.0;
         for(int ii=0;ii<numParticles;ii++){
-            selfEwaldEnergy -= ONE_4PI_EPS0 * charges[ii] * charges[ii] * alpha / sqrt(M_PI);
+            selfEwaldEnergy -= ONE_4PI_EPS0 * realcharges[ii] * realcharges[ii] * alpha / sqrt(M_PI);
         }
         // calc reciprocal part
         
@@ -158,14 +250,14 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                     if (includeForces || includeEnergy){
                         for(int ii=0;ii<numParticles;ii++){
                             double gr = kx * pos[ii][0] + ky * pos[ii][1] + kz * pos[ii][2];
-                            cs += charges[ii] * cos(gr);
-                            ss += charges[ii] * sin(gr);
+                            cs += realcharges[ii] * cos(gr);
+                            ss += realcharges[ii] * sin(gr);
                         }
                     }
                     if(includeForces){
                         for(int ii=0;ii<numParticles;ii++){
                             double gr = kx * pos[ii][0] + ky * pos[ii][1] + kz * pos[ii][2];
-                            double gradr = 2.0 * constant * eak * (ss * charges[ii] * cos(gr) - cs * charges[ii] * sin(gr));
+                            double gradr = 2.0 * constant * eak * (ss * realcharges[ii] * cos(gr) - cs * realcharges[ii] * sin(gr));
                             forces[ii][0] -= gradr * kx;
                             forces[ii][1] -= gradr * ky;
                             forces[ii][2] -= gradr * kz;
@@ -194,7 +286,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
             double alphaR = alpha * r;
 
             if(includeForces){
-                double dEdR = ONE_4PI_EPS0 * charges[ii] * charges[jj] * inverseR * inverseR * inverseR;
+                double dEdR = ONE_4PI_EPS0 * realcharges[ii] * realcharges[jj] * inverseR * inverseR * inverseR;
                 dEdR = dEdR * (erfc(alphaR) + alphaR * exp (- alphaR * alphaR) * 2.0 / sqrt(M_PI));
                 for(int kk=0;kk<3;kk++){
                     double fconst = dEdR*deltaR[0][kk];
@@ -203,7 +295,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                 }
             }
 
-            realSpaceEwaldEnergy += ONE_4PI_EPS0*charges[ii]*charges[jj]*inverseR*erfc(alphaR);
+            realSpaceEwaldEnergy += ONE_4PI_EPS0*realcharges[ii]*realcharges[jj]*inverseR*erfc(alphaR);
         }
 
         for(int p1=0;p1<numParticles;p1++){
@@ -218,7 +310,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                     double alphaR = alpha * r;
 
                     if(includeForces){
-                        double dEdR = ONE_4PI_EPS0 * charges[p1] * charges[p2] * inverseR * inverseR * inverseR;
+                        double dEdR = ONE_4PI_EPS0 * realcharges[p1] * realcharges[p2] * inverseR * inverseR * inverseR;
                         dEdR = dEdR * (erf(alphaR) - alphaR * exp (- alphaR * alphaR) * 2.0 / sqrt(M_PI));
                         for(int kk=0;kk<3;kk++){
                             double fconst = dEdR*deltaR[0][kk];
@@ -227,7 +319,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                         }
                     }
 
-                    realSpaceException -= ONE_4PI_EPS0*charges[p1]*charges[p2]*inverseR*erf(alphaR);
+                    realSpaceException -= ONE_4PI_EPS0*realcharges[p1]*realcharges[p2]*inverseR*erf(alphaR);
                 }
             }
         }
