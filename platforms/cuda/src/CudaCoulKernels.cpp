@@ -119,9 +119,9 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
             faprms.push_back(k);
             faprms.push_back(theta);
         }
-        fangle_idx.initialize(cu, numFluxBonds*3, sizeof(int), "fangleidx");
+        fangle_idx.initialize(cu, numFluxAngles*3, sizeof(int), "fangleidx");
         fangle_idx.upload(faidx);
-        fangle_params.initialize(cu, numFluxBonds*2, elementSize, "fangleprms");
+        fangle_params.initialize(cu, numFluxAngles*2, elementSize, "fangleprms");
         fangle_params.upload(faprms);
 
     } else {
@@ -166,9 +166,9 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
             faprms.push_back(k);
             faprms.push_back(theta);
         }
-        fangle_idx.initialize(cu, numFluxBonds*3, sizeof(int), "fangleidx");
+        fangle_idx.initialize(cu, numFluxAngles*3, sizeof(int), "fangleidx");
         fangle_idx.upload(faidx);
-        fangle_params.initialize(cu, numFluxBonds*2, elementSize, "fangleprms");
+        fangle_params.initialize(cu, numFluxAngles*2, elementSize, "fangleprms");
         fangle_params.upload(faprms);
     }
 
