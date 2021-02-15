@@ -9,7 +9,7 @@ extern "C" __global__ void copyCharge(
 }
 
 extern "C" __global__ void calcRealCharge(
-    real*                           realcharges,
+    real*             __restrict__  realcharges,
     const real4*      __restrict__  posq,
     const int*        __restrict__  fbond_idx,
     const real*       __restrict__  fbond_params,
