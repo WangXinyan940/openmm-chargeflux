@@ -192,8 +192,6 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
     map<string, string> defRealCharges;
     if (ifPBC){
         defRealCharges["USE_PBC"] = "1";
-    } else{
-        defRealCharges["USE_PBC"] = "";
     }
     defRealCharges["NUM_FLUX_BONDS"] = cu.intToString(numFluxBonds);
     defRealCharges["NUM_FLUX_ANGLES"] = cu.intToString(numFluxAngles);
