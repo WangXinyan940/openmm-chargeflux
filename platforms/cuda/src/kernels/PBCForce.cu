@@ -731,6 +731,17 @@ extern "C" __global__ void genIndexAtom(
     }
 }
 
+extern "C" __global__ void computeEwaldSelfEner()(
+    mixed*                    __restrict__     energyBuffer, 
+    const real4*              __restrict__     posq, 
+    const real*               __restrict__     charges
+){
+    for (int atom = blockIdx.x*blockDim.x+threadIdx.x; atom < NUM_ATOMS; atom += blockDim.x*gridDim.x){
+        real chrg = charges[atom];
+        energyBuffer[blockIdx.x*blockDim.x+threadIdx.x] -= ONE_4PI_EPS0 * chrg * chrg * EWALD_ALPHA * ONE_OVER_SQRT_PI;
+    }
+}
+
 extern "C" __global__ void computeEwaldRecEner(
     mixed*                    __restrict__     energyBuffer, 
     const real4*              __restrict__     posq, 

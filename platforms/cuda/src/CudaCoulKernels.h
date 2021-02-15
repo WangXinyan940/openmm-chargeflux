@@ -48,6 +48,7 @@ private:
     OpenMM::CudaContext& cu;
     CUfunction calcNoPBCEnForcesKernel;
     CUfunction calcNoPBCExclusionsKernel;
+    CUfunction calcEwaldSelfEnerKernel;
     CUfunction calcEwaldRecEnerKernel;
     CUfunction calcEwaldRecForceKernel;
     CUfunction calcEwaldRealKernel;

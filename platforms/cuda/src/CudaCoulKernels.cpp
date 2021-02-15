@@ -297,6 +297,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         pbcDefines["USE_DOUBLE_PRECISION"] = cu.getUseDoublePrecision() ? "1" : "";
         pbcDefines["EWALD_ALPHA"] = cu.doubleToString(alpha);
         pbcDefines["TWO_OVER_SQRT_PI"] = cu.doubleToString(2.0/sqrt(M_PI));
+        pbcDefines["ONE_OVER_SQRT_PI"] = cu.doubleToString(1.0/sqrt(M_PI));
         pbcDefines["KMAX_X"] = cu.intToString(kmaxx);
         pbcDefines["KMAX_Y"] = cu.intToString(kmaxy);
         pbcDefines["KMAX_Z"] = cu.intToString(kmaxz);
@@ -306,17 +307,12 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
 
         // macro for short-range
         CUmodule PBCModule = cu.createModule(CudaKernelSources::vectorOps + CudaCoulKernelSources::PBCForce, pbcDefines);
+        calcEwaldSelfEnerKernel = cu.getKernel(PBCModule, "computeEwaldSelfEner");
         calcEwaldRecEnerKernel = cu.getKernel(PBCModule, "computeEwaldRecEner");
         calcEwaldRecForceKernel = cu.getKernel(PBCModule, "computeEwaldRecForce");
         calcEwaldRealKernel = cu.getKernel(PBCModule, "computeNonbonded");
         calcEwaldExclusionsKernel = cu.getKernel(PBCModule, "computeExclusion");
         indexAtomKernel = cu.getKernel(PBCModule, "genIndexAtom");
-
-        selfEwaldEnergy = 0.0;
-        for(int ii=0;ii<numParticles;ii++){
-            double chrg = force.getParticleCharge(ii);
-            selfEwaldEnergy -= ONE_4PI_EPS0 * chrg * chrg * alpha / sqrt(M_PI);
-        }
     }
     hasInitializedKernel = true;
 
@@ -359,7 +355,12 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             };
             cu.executeKernel(calcRealChargeKernel, args_realc, numFluxBonds + numFluxAngles);
         }
-        energy += selfEwaldEnergy;
+        void args_self[] = {
+            &cu.getEnergyBuffer().getDevicePointer(),
+            &cu.getPosq().getDevicePointer(),
+            &realcharges_cu.getDevicePointer()
+        };
+        cu.executeKernel(calcEwaldSelfEnerKernel, args_self, numParticles);
         void* args_rec1[] = {
             &cu.getEnergyBuffer().getDevicePointer(),
             &cu.getPosq().getDevicePointer(),
