@@ -48,10 +48,11 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
         double b = fbond_params[2*ii+1];
         // calc r
         // delta p1 -> p2
+        Vec3 delta;
         if (!ifPBC){
-            Vec3 delta = ReferenceForce::getDeltaR(pos[p1], pos[p2]);
+            delta = ReferenceForce::getDeltaR(pos[p1], pos[p2]);
         } else {
-            Vec3 delta = ReferenceForce::getDeltaRPeriodic(pos[p1], pos[p2], box);
+            delta = ReferenceForce::getDeltaRPeriodic(pos[p1], pos[p2], box);
         }
         double r2 = delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2];
         double r = sqrt(r2);
