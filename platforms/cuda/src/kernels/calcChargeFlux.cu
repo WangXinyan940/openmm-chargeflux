@@ -44,8 +44,8 @@ extern "C" __global__ void calcRealCharge(
             real invR = RSQRT(r2);
             real r = r2 * invR;
             real dq = k * (r - b);
-            atomicAdd(realcharges[idx1], dq);
-            atomicAdd(realcharges[idx2], -dq);
+            atomicAdd(&realcharges[idx1], dq);
+            atomicAdd(&realcharges[idx2], -dq);
         } else {
             // angle
             int pidx = npair - NUM_FLUX_BONDS;
@@ -87,9 +87,9 @@ extern "C" __global__ void calcRealCharge(
             real angle = ACOS((r23_2 + r21_2 - r13_2) * 0.5 * invR21 * invR23);
 
             real dq = k * (angle - theta);
-            atomicAdd(realcharges[idx1], dq);
-            atomicAdd(realcharges[idx3], dq);
-            atomicAdd(realcharges[idx2], -2 * dq);
+            atomicAdd(&realcharges[idx1], dq);
+            atomicAdd(&realcharges[idx3], dq);
+            atomicAdd(&realcharges[idx2], -2 * dq);
         }
     }
 }
