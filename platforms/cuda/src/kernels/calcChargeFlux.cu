@@ -3,7 +3,8 @@ extern "C" __global__ void copyCharge(
     const real*      __restrict__  charges
 ){
     for (int natom = blockIdx.x*blockDim.x+threadIdx.x; natom < NUM_ATOMS; natom += blockDim.x*gridDim.x){
-        atomicExch(&realcharges[natom], charges[natom]);
+        real newc = charges[natom];
+        atomicExch(&realcharges[natom], newc);
     }
 }
 

@@ -345,7 +345,6 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
             void* args_realc[] = {
                 &realcharges_cu.getDevicePointer(),
-                &charges_cu.getDevicePointer(),
                 &cu.getPosq().getDevicePointer(),
                 &fbond_idx.getDevicePointer(),
                 &fbond_params.getDevicePointer(),
@@ -445,7 +444,6 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
             void* args_realc[] = {
                 &realcharges_cu.getDevicePointer(),
-                &charges_cu.getDevicePointer(),
                 &cu.getPosq().getDevicePointer(),
                 &fbond_idx.getDevicePointer(),
                 &fbond_params.getDevicePointer(),
