@@ -61,6 +61,8 @@ public:
     int getNumExceptions() const;
     void setEwaldErrorTolerance(double tol);
     double getEwaldErrorTolerance() const;
+    void addFluxBond(int p1, int p2, double k, double b);
+    void addFluxAngle(int p1, int p2, int p3, double k, double theta);
     
     %extend {
         static CoulPlugin::CoulForce& cast(OpenMM::Force& force) {
