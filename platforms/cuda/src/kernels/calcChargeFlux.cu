@@ -11,17 +11,22 @@ extern "C" __global__ void copyCharge(
 extern "C" __global__ void calcRealCharge(
     real*             __restrict__  realcharges,
     const real4*      __restrict__  posq,
+#ifdef USE_PBC
     const int*        __restrict__  fbond_idx,
     const real*       __restrict__  fbond_params,
     const int*        __restrict__  fangle_idx,
     const real*       __restrict__  fangle_params,
-#ifdef USE_PBC
     const int*        __restrict__  indexAtom,
     real4                           periodicBoxSize, 
     real4                           invPeriodicBoxSize, 
     real4                           periodicBoxVecX, 
     real4                           periodicBoxVecY, 
     real4                           periodicBoxVecZ
+#else
+    const int*        __restrict__  fbond_idx,
+    const real*       __restrict__  fbond_params,
+    const int*        __restrict__  fangle_idx,
+    const real*       __restrict__  fangle_params
 #endif
 ){
     for (int npair = blockIdx.x*blockDim.x+threadIdx.x; npair < NUM_FLUX_BONDS + NUM_FLUX_ANGLES; npair += blockDim.x*gridDim.x){
