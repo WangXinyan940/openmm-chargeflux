@@ -88,7 +88,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         charges_cu.initialize(cu, numParticles, elementSize, "charges");
         charges_cu.upload(parameters);
         realcharges_cu.initialize(cu, numParticles, elementSize, "realcharges");
-        realcharges_cu.uploat(realc);
+        realcharges_cu.upload(realc);
 
         vector<int> fbidx, faidx;
         vector<double> fbprms, faprms;
@@ -135,7 +135,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         charges_cu.initialize(cu, numParticles, elementSize, "charges");
         charges_cu.upload(parameters);
         realcharges_cu.initialize(cu, numParticles, elementSize, "realcharges");
-        realcharges_cu.uploat(realc);
+        realcharges_cu.upload(realc);
 
         vector<int> fbidx, faidx;
         vector<float> fbprms, faprms;
