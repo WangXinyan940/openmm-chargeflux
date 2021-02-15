@@ -4,7 +4,7 @@ extern "C" __global__ void copyCharge(
 ){
     for (int natom = blockIdx.x*blockDim.x+threadIdx.x; natom < NUM_ATOMS; natom += blockDim.x*gridDim.x){
         real newc = charges[natom];
-        atomicExch(&realcharges[natom], newc);
+        realcharges[natom] = newc;
     }
 }
 
