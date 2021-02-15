@@ -336,13 +336,13 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             &numParticles
         };
         cu.executeKernel(indexAtomKernel, argSwitch, numParticles);
-        
+        void* argUpdateCharge[] = {
+            &realcharges_cu.getDevicePointer(),
+            &charges_cu.getDevicePointer()
+        };
+        cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
+
         if (numFluxAngles + numFluxBonds > 0){
-            void* argUpdateCharge[] = {
-                &realcharges_cu.getDevicePointer(),
-                &charges_cu.getDevicePointer()
-            };
-            cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
             void* args_realc[] = {
                 &realcharges_cu.getDevicePointer(),
                 &cu.getPosq().getDevicePointer(),
