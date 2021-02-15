@@ -197,9 +197,11 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
     }
     defRealCharges["NUM_FLUX_BONDS"] = cu.intToString(numFluxBonds);
     defRealCharges["NUM_FLUX_ANGLES"] = cu.intToString(numFluxAngles);
+    defRealCharges["NUM_ATOMS"] = cu.intToString(numParticles);
 
     CUmodule module = cu.createModule(CudaKernelSources::vectorOps + CudaCoulKernelSources::calcChargeFlux, defRealCharges);
     calcRealChargeKernel = cu.getKernel(module, "calcRealCharge");
+    copyChargeKernel = cu.getKernel(module, "copyCharge");
 
     if (!ifPBC){
         map<string, string> defines;
@@ -336,6 +338,11 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         cu.executeKernel(indexAtomKernel, argSwitch, numParticles);
 
         if (numFluxAngles + numFluxBonds > 0){
+            void* argUpdateCharge[] = {
+                &realcharges_cu.getDevicePointer(),
+                &charges_cu.getDevicePointer()
+            };
+            cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
             void* args_realc[] = {
                 &realcharges_cu.getDevicePointer(),
                 &charges_cu.getDevicePointer(),
@@ -432,6 +439,11 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         }
     } else {
         if (numFluxAngles + numFluxBonds > 0){
+            void* argUpdateCharge[] = {
+                &realcharges_cu.getDevicePointer(),
+                &charges_cu.getDevicePointer()
+            };
+            cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
             void* args_realc[] = {
                 &realcharges_cu.getDevicePointer(),
                 &charges_cu.getDevicePointer(),

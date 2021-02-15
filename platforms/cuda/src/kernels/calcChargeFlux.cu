@@ -1,6 +1,14 @@
+extern "C" __global__ void copyCharge(
+    real*            __restrict__  realcharges,
+    const real*      __restrict__  charges
+){
+    for (int natom = blockIdx.x*blockDim.x+threadIdx.x; natom < NUM_ATOMS; natom += blockDim.x*gridDim.x){
+        realcharges[natom] = charges[natom];
+    }
+}
+
 extern "C" __global__ void calcRealCharge(
-    real*                          realcharges,
-    const real*       __restrict__  charges,
+    real*                           realcharges,
     const real4*      __restrict__  posq,
     const int*        __restrict__  fbond_idx,
     const real*       __restrict__  fbond_params,
@@ -36,8 +44,8 @@ extern "C" __global__ void calcRealCharge(
             real invR = RSQRT(r2);
             real r = r2 * invR;
             real dq = k * (r - b);
-            atomicExch(realcharges[idx1], charges[idx1] + dq);
-            atomicExch(realcharges[idx2], charges[idx2] - dq);
+            atomicAdd(realcharges[idx1], dq);
+            atomicAdd(realcharges[idx2], -dq);
         } else {
             // angle
             int pidx = npair - NUM_FLUX_BONDS;
@@ -79,9 +87,9 @@ extern "C" __global__ void calcRealCharge(
             real angle = ACOS((r23_2 + r21_2 - r13_2) * 0.5 * invR21 * invR23);
 
             real dq = k * (angle - theta);
-            atomicExch(realcharges[idx1], charges[idx1] + dq);
-            atomicExch(realcharges[idx3], charges[idx3] + dq);
-            atomicExch(realcharges[idx2], charges[idx2] - 2 * dq);
+            atomicAdd(realcharges[idx1], dq);
+            atomicAdd(realcharges[idx3], dq);
+            atomicAdd(realcharges[idx2], -2 * dq);
         }
     }
 }

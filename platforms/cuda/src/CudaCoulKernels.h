@@ -54,6 +54,7 @@ private:
     CUfunction calcEwaldExclusionsKernel;
     CUfunction indexAtomKernel;
     CUfunction calcRealChargeKernel;
+    CUfunction copyChargeKernel;
     double cutoff;
     std::vector<std::vector<int>> exclusions;
     int numexclusions;
