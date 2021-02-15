@@ -436,11 +436,13 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             cu.executeKernel(calcEwaldExclusionsKernel, argsEx, numexclusions);
         }
     } else {
+        cout << "P1" << endl;
         void* argUpdateCharge[] = {
             &realcharges_cu.getDevicePointer(),
             &charges_cu.getDevicePointer()
         };
         cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
+        cout << "P2" << endl;
         if (numFluxAngles + numFluxBonds > 0){
             void* args_realc[] = {
                 &realcharges_cu.getDevicePointer(),
@@ -453,6 +455,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             cu.executeKernel(calcRealChargeKernel, args_realc, numFluxBonds + numFluxAngles);
         }
 
+        cout << "P3" << endl;
         int paddedNumAtoms = cu.getPaddedNumAtoms();
         void* args[] = {
             &cu.getEnergyBuffer().getDevicePointer(), 
