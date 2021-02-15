@@ -38,10 +38,13 @@ public:
 private:
     bool hasInitializedKernel;
     OpenMM::CudaArray charges_cu;
+    OpenMM::CudaArray realcharges_cu;
     OpenMM::CudaArray pairidx0, pairidx1;
     OpenMM::CudaArray expairidx0, expairidx1;
     OpenMM::CudaArray cosSinSums;
     OpenMM::CudaArray indexAtom;
+    OpenMM::CudaArray fbond_idx, fangle_idx;
+    OpenMM::CudaArray fbond_params, fangle_params;
     OpenMM::CudaContext& cu;
     CUfunction calcNoPBCEnForcesKernel;
     CUfunction calcNoPBCExclusionsKernel;
@@ -50,6 +53,7 @@ private:
     CUfunction calcEwaldRealKernel;
     CUfunction calcEwaldExclusionsKernel;
     CUfunction indexAtomKernel;
+    CUfunction calcRealChargeKernel;
     double cutoff;
     std::vector<std::vector<int>> exclusions;
     int numexclusions;
@@ -58,6 +62,7 @@ private:
     bool ifPBC;
     int kmaxx, kmaxy, kmaxz;
     double selfenergy;
+    int numFluxBonds, numFluxAngles;
 };
 
 } // namespace CoulPlugin
