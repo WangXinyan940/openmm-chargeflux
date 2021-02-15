@@ -35,7 +35,7 @@ public:
      */
     double execute(OpenMM::ContextImpl& context, bool includeForces, bool includeEnergy);
 
-    void updateRealCharge(std::vector<Vec3>& pos, OpenMM::Vec3* box);
+    void updateRealCharge(std::vector<OpenMM::Vec3>& pos, OpenMM::Vec3* box);
 private:
     double cutoff;
     std::vector<double> charges;
