@@ -1,6 +1,6 @@
 extern "C" __global__ void calcRealCharge(
-    mixed*                          realcharges,
-    const mixed*      __restrict__  charges,
+    real*                          realcharges,
+    const real*       __restrict__  charges,
     const real4*      __restrict__  posq,
     const int*        __restrict__  fbond_idx,
     const real*       __restrict__  fbond_params,
