@@ -330,7 +330,6 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
 
 
     if (ifPBC){
-        cout << "Step1" << endl;
         void* argSwitch[] = {
             &cu.getAtomIndexArray().getDevicePointer(),
             &indexAtom.getDevicePointer(),
@@ -339,13 +338,11 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         cu.executeKernel(indexAtomKernel, argSwitch, numParticles);
         
         if (numFluxAngles + numFluxBonds > 0){
-            cout << "Step2" << endl;
             void* argUpdateCharge[] = {
                 &realcharges_cu.getDevicePointer(),
                 &charges_cu.getDevicePointer()
             };
             cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
-            cout << "Step3" << endl;
             void* args_realc[] = {
                 &realcharges_cu.getDevicePointer(),
                 &charges_cu.getDevicePointer(),
@@ -363,7 +360,6 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             };
             cu.executeKernel(calcRealChargeKernel, args_realc, numFluxBonds + numFluxAngles);
         }
-        cout << "Step4" << endl;
         energy += selfEwaldEnergy;
         void* args_rec1[] = {
             &cu.getEnergyBuffer().getDevicePointer(),
