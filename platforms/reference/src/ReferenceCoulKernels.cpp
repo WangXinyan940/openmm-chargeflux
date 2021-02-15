@@ -71,14 +71,15 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
         double k = fangle_params[2*ii];
         double theta = fangle_params[2*ii+1];
         // calc 2 vectors
+        Vec3 d21,d23,d13;
         if (!ifPBC){
-            Vec3 d21 = ReferenceForce::getDeltaR(pos[p2], pos[p1]);
-            Vec3 d23 = ReferenceForce::getDeltaR(pos[p2], pos[p3]);
-            Vec3 d13 = ReferenceForce::getDeltaR(pos[p1], pos[p3]);
+            d21 = ReferenceForce::getDeltaR(pos[p2], pos[p1]);
+            d23 = ReferenceForce::getDeltaR(pos[p2], pos[p3]);
+            d13 = ReferenceForce::getDeltaR(pos[p1], pos[p3]);
         } else {
-            Vec3 d21 = ReferenceForce::getDeltaRPeriodic(pos[p2], pos[p1], box);
-            Vec3 d23 = ReferenceForce::getDeltaRPeriodic(pos[p2], pos[p3], box);
-            Vec3 d13 = ReferenceForce::getDeltaRPeriodic(pos[p1], pos[p3], box);
+            d21 = ReferenceForce::getDeltaRPeriodic(pos[p2], pos[p1], box);
+            d23 = ReferenceForce::getDeltaRPeriodic(pos[p2], pos[p3], box);
+            d13 = ReferenceForce::getDeltaRPeriodic(pos[p1], pos[p3], box);
         }
         double r21_2 = d21[0] * d21[0] + d21[1] * d21[1] + d21[2] * d21[2];
         double r23_2 = d23[0] * d23[0] + d23[1] * d23[1] + d23[2] * d23[2];
