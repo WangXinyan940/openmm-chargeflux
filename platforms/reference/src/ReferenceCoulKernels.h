@@ -53,6 +53,7 @@ private:
     std::vector<int> dqdx_dxidx; 
     std::vector<double> dqdx_val;
     std::vector<double> fangle_params;
+    std::vector<double> dedq;
     OpenMM::NeighborList* neighborList;
 };
 

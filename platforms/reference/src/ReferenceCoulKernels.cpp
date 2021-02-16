@@ -164,6 +164,7 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
 
 void ReferenceCalcCoulForceKernel::initialize(const System& system, const CoulForce& force) {
     int numParticles = system.getNumParticles();
+    dedq.resize(numParticles);
     charges.resize(numParticles);
     for(int i=0;i<numParticles;i++){
         charges[i] = force.getParticleCharge(i);
@@ -303,9 +304,6 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
     Vec3* box = extractBoxVectors(context);
     int numParticles = pos.size();
     updateRealCharge(pos, box);
-    for(int ii=0;ii<dqdx_dqidx.size();ii++){
-        cout << dqdx_dqidx[ii] << " " << dqdx_dxidx[ii] << " " << dqdx_val[3*ii] << " " << dqdx_val[3*ii+1] << " " << dqdx_val[3*ii+2] << endl;
-    }
     double energy = 0.0;    
     double dEdR;
     vector<double> deltaR;
