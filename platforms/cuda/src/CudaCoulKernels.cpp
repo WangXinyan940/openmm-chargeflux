@@ -474,7 +474,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             &dedq.getDevicePointer(),
             &realcharges_cu.getDevicePointer()
         };
-        cu.executeKernel(calcEwaldSelfEnerKernel, args_self, numParticles);
+        // cu.executeKernel(calcEwaldSelfEnerKernel, args_self, numParticles);
         void* args_rec1[] = {
             &cu.getEnergyBuffer().getDevicePointer(),
             &cu.getPosq().getDevicePointer(),
@@ -484,7 +484,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             cu.getPeriodicBoxSizePointer(),                         // real4                                      periodicBoxSize
             cu.getInvPeriodicBoxSizePointer(),                      // real4    
         };
-        cu.executeKernel(calcEwaldRecEnerKernel, args_rec1, (2*kmaxx-1)*(2*kmaxy-1)*(2*kmaxz-1));
+        // cu.executeKernel(calcEwaldRecEnerKernel, args_rec1, (2*kmaxx-1)*(2*kmaxy-1)*(2*kmaxz-1));
 
         void* args_rec2[] = {
             &cu.getForce().getDevicePointer(),
@@ -496,7 +496,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             cu.getPeriodicBoxSizePointer(),                         // real4                                      periodicBoxSize
             cu.getInvPeriodicBoxSizePointer()                       // real4     
         };
-        cu.executeKernel(calcEwaldRecForceKernel, args_rec2, numParticles);
+        // cu.executeKernel(calcEwaldRecForceKernel, args_rec2, numParticles);
 
         int paddedNumAtoms = cu.getPaddedNumAtoms();
         CudaNonbondedUtilities& nb = cu.getNonbondedUtilities();
@@ -551,7 +551,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 cu.getPeriodicBoxVecYPointer(),               //   periodicBoxVecY, 
                 cu.getPeriodicBoxVecZPointer()                //   periodicBoxVecZ
             };
-            cu.executeKernel(calcEwaldExclusionsKernel, argsEx, numexclusions);
+            // cu.executeKernel(calcEwaldExclusionsKernel, argsEx, numexclusions);
         }
         if (numFluxAngles + numFluxBonds > 0) {
             void* argsMult[] = {
