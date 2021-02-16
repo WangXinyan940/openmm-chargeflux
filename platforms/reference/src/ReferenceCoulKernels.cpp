@@ -303,7 +303,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
     Vec3* box = extractBoxVectors(context);
     int numParticles = pos.size();
     updateRealCharge(pos, box);
-    for(int ii=0;ii<dqdx_dqidx;ii++){
+    for(int ii=0;ii<dqdx_dqidx.size();ii++){
         cout << dqdx_dqidx[ii] << " " << dqdx_dxidx[ii] << " " << dqdx_val[ii] << endl;
     }
     double energy = 0.0;    
