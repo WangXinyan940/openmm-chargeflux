@@ -368,7 +368,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
         double realSpaceException = 0.0;
         for(int ii=0;ii<numParticles;ii++){
             selfEwaldEnergy -= ONE_4PI_EPS0 * realcharges[ii] * realcharges[ii] * alpha / sqrt(M_PI);
-            dedq[ii] += - ONE_4PI_EPS0 * alpha / sqrt(M_PI) * realcharges[ii];
+            dedq[ii] += - 2 * ONE_4PI_EPS0 * alpha / sqrt(M_PI) * realcharges[ii];
         }
         // calc reciprocal part
         /*
