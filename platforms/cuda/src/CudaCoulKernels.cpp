@@ -609,14 +609,14 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             };
             cu.executeKernel(multdQdXKernel, argsMult, 4*numFluxBonds+9*numFluxAngles);
         }
-        if (numFluxAngles + numFluxBonds > 0){
-            void* argsPrint[] = {
-                &dqdx_dqidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dqidx,
-                &dqdx_dxidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dxidx,
-                &dqdx_val.getDevicePointer()          // const real*           __restrict__    dqdx_val
-            };
-            cu.executeKernel(printdQdXKernel, argsPrint, 4*numFluxBonds+9*numFluxAngles);
-        }
+        // if (numFluxAngles + numFluxBonds > 0){
+        //     void* argsPrint[] = {
+        //         &dqdx_dqidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dqidx,
+        //         &dqdx_dxidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dxidx,
+        //         &dqdx_val.getDevicePointer()          // const real*           __restrict__    dqdx_val
+        //     };
+        //     cu.executeKernel(printdQdXKernel, argsPrint, 4*numFluxBonds+9*numFluxAngles);
+        // }
     }
     return energy;
 }
