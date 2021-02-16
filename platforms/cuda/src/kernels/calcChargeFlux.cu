@@ -181,7 +181,7 @@ extern "C" __global__ void multdQdX(
 ){
     for (int npair = blockIdx.x*blockDim.x+threadIdx.x; npair < NUM_DQDX_PAIRS; npair += blockDim.x*gridDim.x){
 #ifdef USE_PBC
-        int p1 = indexAtom[dqdx_dqidx[npair]];
+        int p1 = dqdx_dqidx[npair];
         int p2 = indexAtom[dqdx_dxidx[npair]];
 #else
         int p1 = dqdx_dqidx[npair];
