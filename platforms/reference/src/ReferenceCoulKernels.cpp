@@ -56,42 +56,26 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
         }
         double r2 = delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2];
         double r = sqrt(r2);
-        // do something on dq
+        // do something for dq
         double dq = k * (r - b);
         realcharges[p1] += dq;
         realcharges[p2] -= dq;
 
         // do something for dqdx
+        double constant = k / r;
         // p1/p1
         // pair: 4*ii
         // val: 3*pair, 3*pair+1, 3*pair+2
-        int pair = 4 * ii;
+        int pair1 = 4 * ii;
+        int pair2 = 4 * ii + 1;
+        int pair3 = 4 * ii + 2;
+        int pair4 = 4 * ii + 3;
         for(int jj=0;jj<3;jj++){
-            dqdx_val[3*pair+jj] = - k * delta[jj] / r;
-        }
-        
-        // p1/p2
-        // pair: 4*ii+1
-        // val: 3*pair, 3*pair+1, 3*pair+2
-        int pair = 4 * ii + 1;
-        for(int jj=0;jj<3;jj++){
-            dqdx_val[3*pair+jj] = k * delta[jj] / r;
-        }
-
-        // p2/p1
-        // pair: 4*ii+2
-        // val: 3*pair, 3*pair+1, 3*pair+2
-        int pair = 4 * ii + 2;
-        for(int jj=0;jj<3;jj++){
-            dqdx_val[3*pair+jj] = - k * delta[jj] / r;
-        }
-
-        // p2/p2
-        // pair: 4*ii+3
-        // val: 3*pair, 3*pair+1, 3*pair+2
-        int pair = 4 * ii + 3;
-        for(int jj=0;jj<3;jj++){
-            dqdx_val[3*pair+jj] = k * delta[jj] / r;
+            double val = constant * delta[jj];
+            dqdx_val[3*pair1+jj] = - val;
+            dqdx_val[3*pair2+jj] = val;
+            dqdx_val[3*pair3+jj] = - val;
+            dqdx_val[3*pair4+jj] = val;
         }
     }
     for(int ii=0;ii<numCFAngles;ii++){
@@ -140,6 +124,7 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
         // dp3/dp1: dp1/dp1
         // dp3/dp2: - dp3/dp1 - dp3/dp3
         // dp3/dp3: dp1/dp3
+
         // consts
         double one_r21r23 = 1.0 / r21 / r23;
         double one_const = 1 / sqrt(1 - cost * cost);
