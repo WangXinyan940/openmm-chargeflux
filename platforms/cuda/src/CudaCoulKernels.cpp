@@ -441,8 +441,9 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             &charges_cu.getDevicePointer()
         };
         cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
-        cout << "3" << endl;
+
         if (numFluxAngles + numFluxBonds > 0){
+            cout << "3" << endl;
             void* args_realc[] = {
                 &realcharges_cu.getDevicePointer(),
                 &dqdx_val.getDevicePointer(),
