@@ -244,32 +244,41 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         dqdx_dxidx.upload(dqdx_dxidx_v);
 
         if (cu.getUseDoublePrecision()){
-            vector<double> dedq_v;
+
             vector<double> dqdx_val_v;
-            for(int ii=0;ii<numParticles;ii++){
-                dedq_v.push_back(0);
-            }
+
             for(int ii=0;ii<dqdx_dqidx_v.size()*3;ii++){
                 dqdx_val_v.push_back(0);
             }
-            dedq.initialize(cu, dedq_v.size(), elementSize, "dedq");
-            dedq.upload(dedq_v);
+
             dqdx_val.initialize(cu, dqdx_val_v.size(), elementSize, "dqdx_val");
             dqdx_val.upload(dqdx_val_v);
         } else {
-            vector<float> dedq_v;
+
             vector<float> dqdx_val_v;
-            for(int ii=0;ii<numParticles;ii++){
-                dedq_v.push_back(0);
-            }
+
             for(int ii=0;ii<dqdx_dqidx_v.size()*3;ii++){
                 dqdx_val_v.push_back(0);
             }
-            dedq.initialize(cu, dedq_v.size(), elementSize, "dedq");
-            dedq.upload(dedq_v);
+
             dqdx_val.initialize(cu, dqdx_val_v.size(), elementSize, "dqdx_val");
             dqdx_val.upload(dqdx_val_v);
         }
+    }
+    if (cu.getUseDoublePrecision()){
+        vector<double> dedq_v;
+        for(int ii=0;ii<numParticles;ii++){
+            dedq_v.push_back(0);
+        }
+        dedq.initialize(cu, dedq_v.size(), elementSize, "dedq");
+        dedq.upload(dedq_v);
+    } else {
+        vector<float> dedq_v;
+        for(int ii=0;ii<numParticles;ii++){
+            dedq_v.push_back(0);
+        }
+        dedq.initialize(cu, dedq_v.size(), elementSize, "dedq");
+        dedq.upload(dedq_v);
     }
 
     numexclusions = force.getNumExceptions();
@@ -433,8 +442,9 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             &indexAtom.getDevicePointer(),
             &numParticles
         };
-        cout << "2" << endl;
         cu.executeKernel(indexAtomKernel, argSwitch, numParticles);
+
+        cout << "2" << endl;
         void* argUpdateCharge[] = {
             &realcharges_cu.getDevicePointer(),
             &dedq.getDevicePointer(),
