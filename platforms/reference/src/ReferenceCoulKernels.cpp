@@ -420,7 +420,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
 
         computeNeighborListVoxelHash(*neighborList, numParticles, pos, exclusions, box, ifPBC, cutoff, 0.0);
         
-        /*
+        
         for(auto& pair : *neighborList){
             int ii = pair.first;
             int jj = pair.second;
@@ -474,7 +474,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                 }
             }
         }
-        */
+        
 
         // calc dEdQ * dQdX
         for(int ii=0;ii<dqdx_dqidx.size();ii++){
