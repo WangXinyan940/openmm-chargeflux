@@ -344,8 +344,8 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                             forces[p1][dd] += dEdR*deltaR[dd];
                             forces[p2][dd] -= dEdR*deltaR[dd];
                         }
-                    dedq[ii] -= ONE_4PI_EPS0*realcharges[jj]*inverseR;
-                    dedq[jj] -= ONE_4PI_EPS0*realcharges[ii]*inverseR;
+                    dedq[p1] -= ONE_4PI_EPS0*realcharges[p2]*inverseR;
+                    dedq[p2] -= ONE_4PI_EPS0*realcharges[p1]*inverseR;
                     }
                 }
             }
