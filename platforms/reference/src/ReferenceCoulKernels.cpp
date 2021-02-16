@@ -323,6 +323,8 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                         forces[ii][dd] -= dEdR*deltaR[dd];
                         forces[jj][dd] += dEdR*deltaR[dd];
                     }
+                    dedq[ii] += ONE_4PI_EPS0*realcharges[jj]*inverseR;
+                    dedq[jj] += ONE_4PI_EPS0*realcharges[ii]*inverseR;
                 }
             }
         }
@@ -342,8 +344,18 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                             forces[p1][dd] += dEdR*deltaR[dd];
                             forces[p2][dd] -= dEdR*deltaR[dd];
                         }
+                    dedq[ii] -= ONE_4PI_EPS0*realcharges[jj]*inverseR;
+                    dedq[jj] -= ONE_4PI_EPS0*realcharges[ii]*inverseR;
                     }
                 }
+            }
+        }
+        // calc dEdQ * dQdX
+        for(int ii=0;ii<dqdx_dqidx.size();ii++){
+            int p1 = dqdx_dqidx[ii];
+            int p2 = dqdx_dxidx[ii];
+            for(int jj=0;jj<3;jj++){
+                forces[p2][jj] -= dedq[p1] * dqdx_val[3*ii+jj];
             }
         }
     } else {
