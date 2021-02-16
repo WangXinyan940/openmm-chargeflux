@@ -164,7 +164,6 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
 
 void ReferenceCalcCoulForceKernel::initialize(const System& system, const CoulForce& force) {
     int numParticles = system.getNumParticles();
-    dedq.resize(numParticles);
     charges.resize(numParticles);
     for(int i=0;i<numParticles;i++){
         charges[i] = force.getParticleCharge(i);
@@ -306,6 +305,8 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
     updateRealCharge(pos, box);
     double energy = 0.0;    
     double dEdR;
+    vector<double> dedq;
+    dedq.resize(numParticles);
     vector<double> deltaR;
     deltaR.resize(5);
     if (!ifPBC){
@@ -367,6 +368,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
         double realSpaceException = 0.0;
         for(int ii=0;ii<numParticles;ii++){
             selfEwaldEnergy -= ONE_4PI_EPS0 * realcharges[ii] * realcharges[ii] * alpha / sqrt(M_PI);
+            dedq[ii] += - 2.0 * alpha / sqrt(M_PI) * realcharges[ii];
         }
         // calc reciprocal part
         
@@ -402,6 +404,8 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                             forces[ii][0] -= gradr * kx;
                             forces[ii][1] -= gradr * ky;
                             forces[ii][2] -= gradr * kz;
+
+                            dedq[ii] += 2 * constant * eak * (cs * cos(gr) + ss * sin(gr));
                         }
                     }
                     if(includeEnergy){
@@ -434,6 +438,8 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                     forces[ii][kk] += fconst;
                     forces[jj][kk] -= fconst;
                 }
+                dedq[ii] += ONE_4PI_EPS0*realcharges[jj]*inverseR * erfc(alphaR);
+                dedq[jj] += ONE_4PI_EPS0*realcharges[ii]*inverseR * erfc(alphaR);
             }
 
             realSpaceEwaldEnergy += ONE_4PI_EPS0*realcharges[ii]*realcharges[jj]*inverseR*erfc(alphaR);
@@ -458,6 +464,8 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                             forces[p1][kk] -= fconst;
                             forces[p2][kk] += fconst;
                         }
+                    dedq[p1] -= ONE_4PI_EPS0*realcharges[p2]*inverseR * erfc(alphaR);
+                    dedq[p2] -= ONE_4PI_EPS0*realcharges[p1]*inverseR * erfc(alphaR);
                     }
 
                     realSpaceException -= ONE_4PI_EPS0*realcharges[p1]*realcharges[p2]*inverseR*erf(alphaR);
