@@ -380,7 +380,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         pbcDefines["LAST_EXCLUSION_TILE"] = cu.intToString(endExclusionIndex);
         pbcDefines["USE_PERIODIC"] = "1";
         pbcDefines["USE_CUTOFF"] = "1";
-        // pbcDefines["USE_EXCLUSIONS"] = "";
+        pbcDefines["USE_EXCLUSIONS"] = "";
         pbcDefines["USE_SYMMETRIC"] = "1";
         pbcDefines["INCLUDE_FORCES"] = "1";
         pbcDefines["INCLUDE_ENERGY"] = "1";
