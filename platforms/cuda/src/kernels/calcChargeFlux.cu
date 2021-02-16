@@ -120,15 +120,15 @@ extern "C" __global__ void calcRealCharge(
             atomicAdd(&realcharges[idx3], dq);
             atomicAdd(&realcharges[idx2], -2 * dq);
 
-            int pair1 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii);
-            int pair2 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii + 1);
-            int pair3 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii + 2);
-            int pair4 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii + 3);
-            int pair5 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii + 4);
-            int pair6 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii + 5);
-            int pair7 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii + 6);
-            int pair8 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii + 7);
-            int pair9 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii + 8);
+            int pair1 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx);
+            int pair2 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx + 1);
+            int pair3 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx + 2);
+            int pair4 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx + 3);
+            int pair5 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx + 4);
+            int pair6 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx + 5);
+            int pair7 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx + 6);
+            int pair8 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx + 7);
+            int pair9 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx + 8);
             real one_const = RSQRT(1 - cost*cost);
             real fin_const1 = k * invR21 * invR23 * one_const;
             real fin_const2_r21 = k * cost * one_const * invR21 * invR21;
