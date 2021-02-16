@@ -184,3 +184,13 @@ extern "C" __global__ void multdQdX(
         atomicAdd(&forceBuffers[p2+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (-dedq[p1]*dqdx_val[3*npair+2]*0x100000000)));
     }
 }
+
+extern "C" __global__ void printdQdX(
+    const int*            __restrict__    dqdx_dqidx,
+    const int*            __restrict__    dqdx_dxidx,
+    const real*           __restrict__    dqdx_val
+){
+    for (int npair = blockIdx.x*blockDim.x+threadIdx.x; npair < NUM_DQDX_PAIRS; npair += blockDim.x*gridDim.x){
+        printf("%i %i %f %f %f\n", dqdx_dqidx[npair], dqdx_dxidx[npair], dqdx_val[3*npair], dqdx_val[3*npair+1], dqdx_val[3*npair+2]);
+    }
+}

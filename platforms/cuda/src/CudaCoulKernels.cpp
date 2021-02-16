@@ -312,6 +312,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
     calcRealChargeKernel = cu.getKernel(module, "calcRealCharge");
     copyChargeKernel = cu.getKernel(module, "copyCharge");
     multdQdXKernel = cu.getKernel(module, "multdQdX");
+    printdQdXKernel = cu.getKernel(module, "printdQdX");
 
     if (!ifPBC){
         map<string, string> defines;
@@ -607,6 +608,14 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 &dqdx_val.getDevicePointer()          // const real*           __restrict__    dqdx_val
             };
             cu.executeKernel(multdQdXKernel, argsMult, 4*numFluxBonds+12*numFluxAngles);
+        }
+        if (numFluxAngles + numFluxBonds > 0){
+            void* argsPrint[] = {
+                &dqdx_dqidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dqidx,
+                &dqdx_dxidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dxidx,
+                &dqdx_val.getDevicePointer()          // const real*           __restrict__    dqdx_val
+            };
+            cu.executeKernel(printdQdXKernel, argsPrint, 4*numFluxBonds+12*numFluxAngles);
         }
     }
     return energy;

@@ -61,6 +61,7 @@ private:
     CUfunction calcRealChargeKernel;
     CUfunction copyChargeKernel;
     CUfunction multdQdXKernel;
+    CUfunction printdQdXKernel;
     double cutoff;
     std::vector<std::vector<int>> exclusions;
     int numexclusions;
