@@ -137,7 +137,8 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
         double one_const = sqrt(1 - sum_const * sum_const);
 
         double fin_const1 = k * one_r21r23 / one_const;
-        double fin_const2 = k * sum_const / one_const;
+        double fin_const2_r21 = k * sum_const / one_const / r21_2;
+        double fin_const2_r23 = k * sum_const / one_const / r23_2;
 
         // pair: 4 * numCFBonds + 9 * ii
         int pair1 = 4 * numCFBonds + 9 * ii;
@@ -152,8 +153,8 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
 
         // val: 3*pair, 3*pair+1, 3*pair+2
         for(int jj=0;jj<3;jj++){
-            double v1 = - fin_const1 * d23[jj] + fin_const2 * d21[jj] / r21_2;
-            double v3 = - fin_const1 * d21[jj] + fin_const2 * d23[jj] / r23_2;
+            double v1 = - fin_const1 * d23[jj] + fin_const2_r21 * d21[jj];
+            double v3 = - fin_const1 * d21[jj] + fin_const2_r23 * d23[jj];
             dqdx_val[3*pair1+jj] = v1;
             dqdx_val[3*pair2+jj] = - v1 - v3;
             dqdx_val[3*pair3+jj] = v3;
