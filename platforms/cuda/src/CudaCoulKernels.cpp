@@ -471,6 +471,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         }
         void* args_self[] = {
             &cu.getEnergyBuffer().getDevicePointer(),
+            &dedq.getDevicePointer(),
             &realcharges_cu.getDevicePointer()
         };
         cu.executeKernel(calcEwaldSelfEnerKernel, args_self, numParticles);
@@ -487,6 +488,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
 
         void* args_rec2[] = {
             &cu.getForce().getDevicePointer(),
+            &dedq.getDevicePointer(),
             &cu.getPosq().getDevicePointer(),
             &realcharges_cu.getDevicePointer(),                             // const real*    
             &cu.getAtomIndexArray().getDevicePointer(),             // const int*           
@@ -506,6 +508,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         void* args[] = {
             &cu.getForce().getDevicePointer(),                      // unsigned long long*       __restrict__     forceBuffers, 
             &cu.getEnergyBuffer().getDevicePointer(),               // mixed*                    __restrict__     energyBuffer, 
+            &dedq.getDevicePointer(),
             &cu.getPosq().getDevicePointer(),                       // const real4*              __restrict__     posq, 
             &realcharges_cu.getDevicePointer(),                             // const real*               __restrict__     params,
             &cu.getAtomIndexArray().getDevicePointer(),             // const int*                __restrict__     atomIndex,
@@ -534,6 +537,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             void* argsEx[] = {
                 &cu.getForce().getDevicePointer(),            //   forceBuffers, 
                 &cu.getEnergyBuffer().getDevicePointer(),     //   energyBuffer, 
+                &dedq.getDevicePointer(),
                 &cu.getPosq().getDevicePointer(),             //   posq, 
                 &realcharges_cu.getDevicePointer(),               //   params,
                 &cu.getAtomIndexArray().getDevicePointer(),   //   atomIndex,
@@ -548,6 +552,16 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 cu.getPeriodicBoxVecZPointer()                //   periodicBoxVecZ
             };
             cu.executeKernel(calcEwaldExclusionsKernel, argsEx, numexclusions);
+        }
+        if (numFluxAngles + numFluxBonds > 0) {
+            void* argsMult[] = {
+                &cu.getForce().getDevicePointer(),    // unsigned long long*   __restrict__    forceBuffers, 
+                &dedq.getDevicePointer(),             // const real*           __restrict__    dedq,
+                &dqdx_dqidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dqidx,
+                &dqdx_dxidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dxidx,
+                &dqdx_val.getDevicePointer()          // const real*           __restrict__    dqdx_val
+            };
+            cu.executeKernel(multdQdXKernel, argsMult, 4*numFluxBonds+9*numFluxAngles);
         }
     } else {
         void* argUpdateCharge[] = {

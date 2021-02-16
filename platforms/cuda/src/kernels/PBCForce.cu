@@ -9,6 +9,8 @@ typedef struct {
     real x, y, z, q;
     real chrg;
     real fx, fy, fz;
+    real dedqv;
+    real empty;
 } AtomData;
 
 
@@ -77,6 +79,7 @@ typedef struct {
 extern "C" __global__ void computeNonbonded(
         unsigned long long*       __restrict__     forceBuffers, 
         mixed*                    __restrict__     energyBuffer, 
+        real*                     __restrict__     dedq,
         const real4*              __restrict__     posq, 
         const real*               __restrict__     charges,
         const int*                __restrict__     atomIndex,
@@ -117,6 +120,7 @@ extern "C" __global__ void computeNonbonded(
         const unsigned int x = tileIndices.x;
         const unsigned int y = tileIndices.y;
         real3 force = make_real3(0);
+        real dedqv = 0;
         unsigned int atom1 = x*TILE_SIZE + tgx;
         real4 posq1 = posq[atom1];
         
@@ -181,6 +185,7 @@ extern "C" __global__ void computeNonbonded(
                     const real erfcAlphaR = (0.254829592f+(-0.284496736f+(1.421413741f+(-1.453152027f+1.061405429f*t)*t)*t)*t)*t*expAlphaRSqr;
 #endif
                     COMPUTE_INTERACTION;
+                    dedqv += 0.5 * ONE_4PI_EPS0 * atomData2.chrg * invR * erfcAlphaR;
                 }
                 energy += 0.5f*tempEnergy;
 #ifdef INCLUDE_FORCES
@@ -194,6 +199,8 @@ extern "C" __global__ void computeNonbonded(
                 force.z -= dEdR1.z;
 #endif
 #endif
+                
+
 #ifdef USE_EXCLUSIONS
                 excl >>= 1;
 #endif
@@ -250,6 +257,8 @@ extern "C" __global__ void computeNonbonded(
 #endif
                 real tempEnergy = 0.0f;
                 const real interactionScale = 1.0f;
+
+
                 if (!isExcluded && r2 < cutoff2){
                     real alphaR = EWALD_ALPHA * r;
 #ifdef USE_DOUBLE_PRECISION
@@ -259,6 +268,8 @@ extern "C" __global__ void computeNonbonded(
                     const real erfcAlphaR = (0.254829592f+(-0.284496736f+(1.421413741f+(-1.453152027f+1.061405429f*t)*t)*t)*t)*t*expAlphaRSqr;
 #endif
                     COMPUTE_INTERACTION;
+                    dedqv += ONE_4PI_EPS0 * atomData2.chrg * invR * erfcAlphaR;
+                    localData[tbx+tj].dedq += ONE_4PI_EPS0 * atomData1.chrg * invR * erfcAlphaR;
                 }
                 energy += tempEnergy;
 #ifdef INCLUDE_FORCES
@@ -299,6 +310,8 @@ extern "C" __global__ void computeNonbonded(
             atomicAdd(&forceBuffers[offset+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (localData[threadIdx.x].fy*0x100000000)));
             atomicAdd(&forceBuffers[offset+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (localData[threadIdx.x].fz*0x100000000)));
 
+            atomicAdd(&dedq[atomIndex[offset]], localData[threadIdx.x].dedq);
+
 #endif
         }
         // Write results for on and off diagonal tiles
@@ -307,6 +320,8 @@ extern "C" __global__ void computeNonbonded(
         atomicAdd(&forceBuffers[offset], static_cast<unsigned long long>((long long) (force.x*0x100000000)));
         atomicAdd(&forceBuffers[offset+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (force.y*0x100000000)));
         atomicAdd(&forceBuffers[offset+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (force.z*0x100000000)));
+
+        atomicAdd(&dedq[atomIndex[offset]], dedqv);
 #endif
     }
 
@@ -334,6 +349,7 @@ extern "C" __global__ void computeNonbonded(
     while (pos < end) {
         const bool hasExclusions = false;
         real3 force = make_real3(0);
+        real dedqv = 0;
         bool includeTile = true;
 
         // Extract the coordinates of this tile.
@@ -458,6 +474,9 @@ extern "C" __global__ void computeNonbonded(
                         const real erfcAlphaR = (0.254829592f+(-0.284496736f+(1.421413741f+(-1.453152027f+1.061405429f*t)*t)*t)*t)*t*expAlphaRSqr;
 #endif
                         COMPUTE_INTERACTION;
+
+                        dedqv +=  ONE_4PI_EPS0 * atomData2.chrg * invR * erfcAlphaR;
+                        localData[tbx+tj].dedq +=  ONE_4PI_EPS0 * atomData1.chrg * invR * erfcAlphaR;
                     }
                     
                     energy += tempEnergy;
@@ -533,6 +552,9 @@ extern "C" __global__ void computeNonbonded(
                         const real erfcAlphaR = (0.254829592f+(-0.284496736f+(1.421413741f+(-1.453152027f+1.061405429f*t)*t)*t)*t)*t*expAlphaRSqr;
 #endif
                         COMPUTE_INTERACTION;
+
+                        dedqv +=  ONE_4PI_EPS0 * atomData2.chrg * invR * erfcAlphaR;
+                        localData[tbx+tj].dedq +=  ONE_4PI_EPS0 * atomData1.chrg * invR * erfcAlphaR;
                     }
                     
                     energy += tempEnergy;
@@ -568,6 +590,8 @@ extern "C" __global__ void computeNonbonded(
             atomicAdd(&forceBuffers[atom1], static_cast<unsigned long long>((long long) (force.x*0x100000000)));
             atomicAdd(&forceBuffers[atom1+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (force.y*0x100000000)));
             atomicAdd(&forceBuffers[atom1+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (force.z*0x100000000)));
+
+            atomicAdd(&dedq[atomIndex[atom1]], dedqv);
 #ifdef USE_CUTOFF
             unsigned int atom2 = atomIndices[threadIdx.x];
 #else
@@ -579,6 +603,7 @@ extern "C" __global__ void computeNonbonded(
                 atomicAdd(&forceBuffers[atom2+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (localData[threadIdx.x].fy*0x100000000)));
                 atomicAdd(&forceBuffers[atom2+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (localData[threadIdx.x].fz*0x100000000)));
 
+                atomicAdd(&dedq[atomIndex[atom2]], localData[threadIdx.x].dedq);
             }
 #endif
         }
@@ -643,6 +668,9 @@ extern "C" __global__ void computeNonbonded(
             const real erfcAlphaR = (0.254829592f+(-0.284496736f+(1.421413741f+(-1.453152027f+1.061405429f*t)*t)*t)*t)*t*expAlphaRSqr;
 #endif
             COMPUTE_INTERACTION;
+
+            real dedq1 =  ONE_4PI_EPS0 * atomData2.chrg * invR * erfcAlphaR;
+            real dedq2 =  ONE_4PI_EPS0 * atomData1.chrg * invR * erfcAlphaR;
         }
         
         energy += tempEnergy;
@@ -657,6 +685,9 @@ extern "C" __global__ void computeNonbonded(
         atomicAdd(&forceBuffers[atom2], static_cast<unsigned long long>((long long) (-dEdR2.x*0x100000000)));
         atomicAdd(&forceBuffers[atom2+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (-dEdR2.y*0x100000000)));
         atomicAdd(&forceBuffers[atom2+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (-dEdR2.z*0x100000000)));
+
+        atomicAdd(&dedq[atomIndex[atom1]], dedq1);
+        atomicAdd(&dedq[atomIndex[atom2]], dedq2);
 #endif
     }
 #endif
@@ -668,6 +699,7 @@ extern "C" __global__ void computeNonbonded(
 extern "C" __global__ void computeExclusion(
     unsigned long long*       __restrict__     forceBuffers, 
     mixed*                    __restrict__     energyBuffer, 
+    real*                     __restrict__     dedq,
     const real4*              __restrict__     posq, 
     const real*               __restrict__     charges,
     const int*                __restrict__     atomIndex,
@@ -710,6 +742,9 @@ extern "C" __global__ void computeExclusion(
             atomicAdd(&forceBuffers[atom2], static_cast<unsigned long long>((long long) (delta.x*0x100000000)));
             atomicAdd(&forceBuffers[atom2+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (delta.y*0x100000000)));
             atomicAdd(&forceBuffers[atom2+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (delta.z*0x100000000)));
+
+            atomicAdd(&dedq[atomIndex[atom1]], -ONE_4PI_EPS0*prm2*invR);
+            atomicAdd(&dedq[atomIndex[atom2]], -ONE_4PI_EPS0*prm1*invR);
         }
     }
 }
@@ -727,11 +762,14 @@ extern "C" __global__ void genIndexAtom(
 
 extern "C" __global__ void computeEwaldSelfEner(
     mixed*                    __restrict__     energyBuffer, 
+    real*                     __restrict__     dedq,
     const real*               __restrict__     charges
 ){
     for (int atom = blockIdx.x*blockDim.x+threadIdx.x; atom < NUM_ATOMS; atom += blockDim.x*gridDim.x){
         real chrg = charges[atom];
         energyBuffer[blockIdx.x*blockDim.x+threadIdx.x] -= ONE_4PI_EPS0 * chrg * chrg * EWALD_ALPHA * ONE_OVER_SQRT_PI;
+
+        dedq[atom] += - 2 * ONE_4PI_EPS0 * EWALD_ALPHA * ONE_OVER_SQRT_PI * chrg;
     }
 }
 
@@ -792,6 +830,7 @@ extern "C" __global__ void computeEwaldRecEner(
 
 extern "C" __global__ void computeEwaldRecForce(
     unsigned long long*       __restrict__     forceBuffers, 
+    real*                     __restrict__     dedq,
     const real4*              __restrict__     posq, 
     const real*               __restrict__     charges,
     const int*                __restrict__     atomIndex,
@@ -804,6 +843,7 @@ extern "C" __global__ void computeEwaldRecForce(
     real reciprocalCoefficient = ONE_4PI_EPS0*4*M_PI*(invPeriodicBoxSize.x*invPeriodicBoxSize.y*invPeriodicBoxSize.z);
     while (atom < NUM_ATOMS) {
         real3 force = make_real3(0);
+        real dedqv = 0;
         real4 apos = posq[atom];
 
         // Loop over all wave vectors.
@@ -831,6 +871,9 @@ extern "C" __global__ void computeEwaldRecForce(
                     force.x += dEdR*kx;
                     force.y += dEdR*ky;
                     force.z += dEdR*kz;
+
+                    dedqv += 2*reciprocalCoefficient*ak*(cossum*structureFactor.x + sinsum*structureFactor.y);
+
                     lowrz = 1 - KMAX_Z;
                 }
                 lowry = 1 - KMAX_Y;
@@ -842,6 +885,9 @@ extern "C" __global__ void computeEwaldRecForce(
         atomicAdd(&forceBuffers[atom], static_cast<unsigned long long>((long long) (force.x*0x100000000)));
         atomicAdd(&forceBuffers[atom+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (force.y*0x100000000)));
         atomicAdd(&forceBuffers[atom+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (force.z*0x100000000)));
+
+        atomicAdd(&dedq[atomIndex[atom]], dedqv);
+
         atom += blockDim.x*gridDim.x;
     }
 }
