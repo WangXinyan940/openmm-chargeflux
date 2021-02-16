@@ -74,8 +74,8 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
             double val = constant * delta[jj];
             dqdx_val[3*pair1+jj] = - val;
             dqdx_val[3*pair2+jj] = val;
-            dqdx_val[3*pair3+jj] = - val;
-            dqdx_val[3*pair4+jj] = val;
+            dqdx_val[3*pair3+jj] = val;
+            dqdx_val[3*pair4+jj] = - val;
         }
     }
     for(int ii=0;ii<numCFAngles;ii++){
