@@ -122,23 +122,31 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
         double r23 = sqrt(r23_2);
         double r13 = sqrt(r13_2);
         // calc angle
-        double angle = acos((r23_2 + r21_2 - r13_2) / 2 / r21 / r23);
-        // do something on dq
+        double cost = (r23_2 + r21_2 - r13_2) / 2 / r21 / r23;
+        double angle = acos(cost);
+        // do something for dq
         double dq = k * (angle - theta);
         realcharges[p1] += dq;
         realcharges[p3] += dq;
         realcharges[p2] -= 2 * dq;
 
         // do something for dqdx
+        // dp1/dp1: - \frac{k \left(\frac{cos(\theta) \left(- p_{1 x} + p_{2 x}\right)}{r_{21}^{2}} + \frac{- p_{2 x} + p_{3 x}}{r_{21} r_{23}}\right)}{\sqrt{1 - cos(\theta)^{2}}}
+        // dp1/dp2: - dp1/dp1 - dp1/dp3
+        // dp1/dp3: - \frac{k \left(\frac{cos(\theta) \left(p_{2 x} - p_{3 x}\right)}{r_{23}^{2}} + \frac{p_{1 x} - p_{2 x}}{r_{21} r_{23}}\right)}{\sqrt{1 - cos(\theta)^{2}}}
+        // dp2/dp1: - dp1/dp1 - dp3/dp1
+        // dp2/dp2: - dp2/dp1 - dp2/dp3
+        // dp2/dp3: - dp1/dp3 - dp3/dp3
+        // dp3/dp1: dp1/dp1
+        // dp3/dp2: - dp3/dp1 - dp3/dp3
+        // dp3/dp3: dp1/dp3
         // consts
-        double r2const = 0.5 * (r21_2 + r23_2 - r13_2);
         double one_r21r23 = 1.0 / r21 / r23;
-        double sum_const = r2const * one_r21r23;
-        double one_const = sqrt(1 - sum_const * sum_const);
+        double one_const = 1 / sqrt(1 - cost * cost);
 
-        double fin_const1 = k * one_r21r23 / one_const;
-        double fin_const2_r21 = k * sum_const / one_const / r21_2;
-        double fin_const2_r23 = k * sum_const / one_const / r23_2;
+        double fin_const1 = k * one_r21r23 * one_const;
+        double fin_const2_r21 = k * cost * one_const / r21_2;
+        double fin_const2_r23 = k * cost * one_const / r23_2;
 
         // pair: 4 * numCFBonds + 9 * ii
         int pair1 = 4 * numCFBonds + 9 * ii;
