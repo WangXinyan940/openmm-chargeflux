@@ -421,17 +421,19 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
 }
 
 double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces, bool includeEnergy) {
-    
+    cout << "In" << endl;
     int numParticles = cu.getNumAtoms();
     double energy = 0.0;
 
 
     if (ifPBC){
+        cout << "1" << endl;
         void* argSwitch[] = {
             &cu.getAtomIndexArray().getDevicePointer(),
             &indexAtom.getDevicePointer(),
             &numParticles
         };
+        cout << "2" << endl;
         cu.executeKernel(indexAtomKernel, argSwitch, numParticles);
         void* argUpdateCharge[] = {
             &realcharges_cu.getDevicePointer(),
@@ -439,7 +441,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             &charges_cu.getDevicePointer()
         };
         cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
-
+        cout << "3" << endl;
         if (numFluxAngles + numFluxBonds > 0){
             void* args_realc[] = {
                 &realcharges_cu.getDevicePointer(),
