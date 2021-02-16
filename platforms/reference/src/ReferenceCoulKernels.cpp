@@ -60,6 +60,39 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
         double dq = k * (r - b);
         realcharges[p1] += dq;
         realcharges[p2] -= dq;
+
+        // do something for dqdx
+        // p1/p1
+        // pair: 4*ii
+        // val: 3*pair, 3*pair+1, 3*pair+2
+        int pair = 4 * ii;
+        for(int jj=0;jj<3;jj++){
+            dqdx_val[3*pair+jj] = - k * delta[jj] / r;
+        }
+        
+        // p1/p2
+        // pair: 4*ii+1
+        // val: 3*pair, 3*pair+1, 3*pair+2
+        pair = 4 * ii + 1;
+        for(int jj=0;jj<3;jj++){
+            dqdx_val[3*pair+jj] = k * delta[jj] / r;
+        }
+
+        // p2/p1
+        // pair: 4*ii+2
+        // val: 3*pair, 3*pair+1, 3*pair+2
+        pair = 4 * ii + 2;
+        for(int jj=0;jj<3;jj++){
+            dqdx_val[3*pair+jj] = - k * delta[jj] / r;
+        }
+
+        // p2/p2
+        // pair: 4*ii+3
+        // val: 3*pair, 3*pair+1, 3*pair+2
+        pair = 4 * ii + 3;
+        for(int jj=0;jj<3;jj++){
+            dqdx_val[3*pair+jj] = k * delta[jj] / r;
+        }
     }
     for(int ii=0;ii<numCFAngles;ii++){
         // angle 1-2-3
@@ -130,6 +163,68 @@ void ReferenceCalcCoulForceKernel::initialize(const System& system, const CoulFo
         fangle_idx[3*ii+2] = p3;
         fangle_params[2*ii] = k;
         fangle_params[2*ii+1] = theta;
+    }
+
+    for(int ii=0;ii<numCFBonds;ii++){
+        int p1, p2;
+        double k, b;
+        force.getFluxBondParameters(ii, p1, p2, k, b);
+        // p1-p1
+        dqdx_dqidx.push_back(p1);
+        dqdx_dxidx.push_back(p1);
+
+        // p1-p2
+        dqdx_dqidx.push_back(p1);
+        dqdx_dxidx.push_back(p2);
+
+        // p2-p1
+        dqdx_dqidx.push_back(p2);
+        dqdx_dxidx.push_back(p1);
+
+        // p2-p2
+        dqdx_dqidx.push_back(p2);
+        dqdx_dxidx.push_back(p2);
+
+        for(int jj=0;jj<12;jj++){
+            dqdx_val.push_back(0);
+        }
+    }
+
+    for(int ii=0;ii<numCFAngles;ii++){
+        int p1, p2, p3;
+        double k, theta;
+        force.getFluxAngleParameters(ii, p1, p2, p3, k, theta);
+        // p1-p1
+        dqdx_dqidx.push_back(p1);
+        dqdx_dxidx.push_back(p1);
+        // p1-p2
+        dqdx_dqidx.push_back(p1);
+        dqdx_dxidx.push_back(p2);
+        // p1-p3
+        dqdx_dqidx.push_back(p1);
+        dqdx_dxidx.push_back(p3);
+        // p2-p1
+        dqdx_dqidx.push_back(p2);
+        dqdx_dxidx.push_back(p1);
+        // p2-p2
+        dqdx_dqidx.push_back(p2);
+        dqdx_dxidx.push_back(p2);
+        // p2-p3
+        dqdx_dqidx.push_back(p2);
+        dqdx_dxidx.push_back(p3);
+        // p3-p1
+        dqdx_dqidx.push_back(p3);
+        dqdx_dxidx.push_back(p1);
+        // p3-p2
+        dqdx_dqidx.push_back(p3);
+        dqdx_dxidx.push_back(p2);
+        // p3-p3
+        dqdx_dqidx.push_back(p3);
+        dqdx_dxidx.push_back(p3);
+
+        for(int jj=0;jj<27;jj++){
+            dqdx_val.push_back(0);
+        }
     }
 
     exclusions.resize(numParticles);

@@ -49,6 +49,9 @@ private:
     std::vector<double> fbond_params;
     int numCFAngles;
     std::vector<int> fangle_idx;
+    std::vector<int> dqdx_dqidx;
+    std::vector<int> dqdx_dxidx; 
+    std::vector<double> dqdx_val;
     std::vector<double> fangle_params;
     OpenMM::NeighborList* neighborList;
 };
