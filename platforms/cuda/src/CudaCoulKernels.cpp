@@ -551,7 +551,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 cu.getPeriodicBoxVecYPointer(),               //   periodicBoxVecY, 
                 cu.getPeriodicBoxVecZPointer()                //   periodicBoxVecZ
             };
-            cu.executeKernel(calcEwaldExclusionsKernel, argsEx, numexclusions);
+            // cu.executeKernel(calcEwaldExclusionsKernel, argsEx, numexclusions);
         }
         if (numFluxAngles + numFluxBonds > 0) {
             void* argsMult[] = {
