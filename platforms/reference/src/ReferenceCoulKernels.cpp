@@ -73,7 +73,7 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
         // p1/p2
         // pair: 4*ii+1
         // val: 3*pair, 3*pair+1, 3*pair+2
-        pair = 4 * ii + 1;
+        int pair = 4 * ii + 1;
         for(int jj=0;jj<3;jj++){
             dqdx_val[3*pair+jj] = k * delta[jj] / r;
         }
@@ -81,7 +81,7 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
         // p2/p1
         // pair: 4*ii+2
         // val: 3*pair, 3*pair+1, 3*pair+2
-        pair = 4 * ii + 2;
+        int pair = 4 * ii + 2;
         for(int jj=0;jj<3;jj++){
             dqdx_val[3*pair+jj] = - k * delta[jj] / r;
         }
@@ -89,7 +89,7 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
         // p2/p2
         // pair: 4*ii+3
         // val: 3*pair, 3*pair+1, 3*pair+2
-        pair = 4 * ii + 3;
+        int pair = 4 * ii + 3;
         for(int jj=0;jj<3;jj++){
             dqdx_val[3*pair+jj] = k * delta[jj] / r;
         }
@@ -128,6 +128,42 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
         realcharges[p1] += dq;
         realcharges[p3] += dq;
         realcharges[p2] -= 2 * dq;
+
+        // do something for dqdx
+        // consts
+        double r2const = 0.5 * (r21_2 + r23_2 - r13_2);
+        double one_r21r23 = 1.0 / r21 / r23;
+        double sum_const = r2const * one_r21r23;
+        double one_const = sqrt(1 - sum_const * sum_const);
+
+        double fin_const1 = k * one_r21r23 / one_const;
+        double fin_const2 = k * sum_const / one_const;
+
+        // pair: 4 * numCFBonds + 9 * ii
+        int pair1 = 4 * numCFBonds + 9 * ii;
+        int pair2 = 4 * numCFBonds + 9 * ii + 1;
+        int pair3 = 4 * numCFBonds + 9 * ii + 2;
+        int pair4 = 4 * numCFBonds + 9 * ii + 3;
+        int pair5 = 4 * numCFBonds + 9 * ii + 4;
+        int pair6 = 4 * numCFBonds + 9 * ii + 5;
+        int pair7 = 4 * numCFBonds + 9 * ii + 6;
+        int pair8 = 4 * numCFBonds + 9 * ii + 7;
+        int pair9 = 4 * numCFBonds + 9 * ii + 8;
+
+        // val: 3*pair, 3*pair+1, 3*pair+2
+        for(int jj=0;jj<3;jj++){
+            double v1 = - fin_const1 * d23[jj] + fin_const2 * d21[jj] / r21_2;
+            double v3 = - fin_const1 * d21[jj] + fin_const2 * d23[jj] / r23_2;
+            dqdx_val[3*pair1+jj] = v1;
+            dqdx_val[3*pair2+jj] = - v1 - v3;
+            dqdx_val[3*pair3+jj] = v3;
+            dqdx_val[3*pair4+jj] = - 2 * v1;
+            dqdx_val[3*pair5+jj] = 2 * (v1 + v3);
+            dqdx_val[3*pair6+jj] = - 2 * v3;
+            dqdx_val[3*pair7+jj] = v1;
+            dqdx_val[3*pair8+jj] = -v1 - v3;
+            dqdx_val[3*pair9+jj] = v3;
+        }
     }
 }
 
