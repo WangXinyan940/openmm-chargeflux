@@ -148,14 +148,15 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
         for(int jj=0;jj<3;jj++){
             double v1 = - fin_const1 * d23[jj] + fin_const2_r21 * d21[jj];
             double v3 = - fin_const1 * d21[jj] + fin_const2_r23 * d23[jj];
+            double v2 = - v1 - v3;
             dqdx_val[3*pair1+jj] = v1;
-            dqdx_val[3*pair2+jj] = - v1 - v3;
+            dqdx_val[3*pair2+jj] = v2;
             dqdx_val[3*pair3+jj] = v3;
             dqdx_val[3*pair4+jj] = - 2 * v1;
-            dqdx_val[3*pair5+jj] = 2 * (v1 + v3);
+            dqdx_val[3*pair5+jj] = - 2 * v2;
             dqdx_val[3*pair6+jj] = - 2 * v3;
             dqdx_val[3*pair7+jj] = v1;
-            dqdx_val[3*pair8+jj] = -v1 - v3;
+            dqdx_val[3*pair8+jj] = v2;
             dqdx_val[3*pair9+jj] = v3;
         }
     }
