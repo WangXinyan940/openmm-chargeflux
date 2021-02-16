@@ -288,6 +288,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
     defRealCharges["NUM_FLUX_ANGLES"] = cu.intToString(numFluxAngles);
     defRealCharges["NUM_ATOMS"] = cu.intToString(numParticles);
     defRealCharges["NUM_DQDX_PAIRS"] = cu.intToString(numFluxBonds * 4 + numFluxAngles * 12);
+    defRealCharges["PADDED_NUM_ATOMS"] = cu.intToString(cu.getPaddedNumAtoms());
 
     CUmodule module = cu.createModule(CudaKernelSources::vectorOps + CudaCoulKernelSources::calcChargeFlux, defRealCharges);
     calcRealChargeKernel = cu.getKernel(module, "calcRealCharge");
