@@ -305,7 +305,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
     defRealCharges["NUM_FLUX_BONDS"] = cu.intToString(numFluxBonds);
     defRealCharges["NUM_FLUX_ANGLES"] = cu.intToString(numFluxAngles);
     defRealCharges["NUM_ATOMS"] = cu.intToString(numParticles);
-    defRealCharges["NUM_DQDX_PAIRS"] = cu.intToString(numFluxBonds * 4 + numFluxAngles * 12);
+    defRealCharges["NUM_DQDX_PAIRS"] = cu.intToString(numFluxBonds * 4 + numFluxAngles * 9);
     defRealCharges["PADDED_NUM_ATOMS"] = cu.intToString(cu.getPaddedNumAtoms());
 
     CUmodule module = cu.createModule(CudaKernelSources::vectorOps + CudaCoulKernelSources::calcChargeFlux, defRealCharges);
@@ -607,7 +607,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 &dqdx_dxidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dxidx,
                 &dqdx_val.getDevicePointer()          // const real*           __restrict__    dqdx_val
             };
-            cu.executeKernel(multdQdXKernel, argsMult, 4*numFluxBonds+12*numFluxAngles);
+            cu.executeKernel(multdQdXKernel, argsMult, 4*numFluxBonds+9*numFluxAngles);
         }
         if (numFluxAngles + numFluxBonds > 0){
             void* argsPrint[] = {
@@ -615,7 +615,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 &dqdx_dxidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dxidx,
                 &dqdx_val.getDevicePointer()          // const real*           __restrict__    dqdx_val
             };
-            cu.executeKernel(printdQdXKernel, argsPrint, 4*numFluxBonds+12*numFluxAngles);
+            cu.executeKernel(printdQdXKernel, argsPrint, 4*numFluxBonds+9*numFluxAngles);
         }
     }
     return energy;
