@@ -460,11 +460,13 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             };
             cu.executeKernel(calcRealChargeKernel, args_realc, numFluxBonds + numFluxAngles);
         }
+        cout << "4" << endl;
         void* args_self[] = {
             &cu.getEnergyBuffer().getDevicePointer(),
             &realcharges_cu.getDevicePointer()
         };
         cu.executeKernel(calcEwaldSelfEnerKernel, args_self, numParticles);
+        cout << "5" << endl;
         void* args_rec1[] = {
             &cu.getEnergyBuffer().getDevicePointer(),
             &cu.getPosq().getDevicePointer(),
@@ -476,6 +478,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         };
         cu.executeKernel(calcEwaldRecEnerKernel, args_rec1, (2*kmaxx-1)*(2*kmaxy-1)*(2*kmaxz-1));
 
+        cout << "6" << endl;
         void* args_rec2[] = {
             &cu.getForce().getDevicePointer(),
             &cu.getPosq().getDevicePointer(),
@@ -487,6 +490,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         };
         cu.executeKernel(calcEwaldRecForceKernel, args_rec2, numParticles);
 
+        cout << "7" << endl;
         int paddedNumAtoms = cu.getPaddedNumAtoms();
         CudaNonbondedUtilities& nb = cu.getNonbondedUtilities();
         int startTileIndex = nb.getStartTileIndex();
@@ -494,6 +498,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         unsigned int maxTiles = nb.getInteractingTiles().getSize();
         int maxSinglePairs = nb.getSinglePairs().getSize();
 
+        cout << "8" << endl;
         void* args[] = {
             &cu.getForce().getDevicePointer(),                      // unsigned long long*       __restrict__     forceBuffers, 
             &cu.getEnergyBuffer().getDevicePointer(),               // mixed*                    __restrict__     energyBuffer, 
@@ -520,8 +525,9 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         };
         cu.executeKernel(calcEwaldRealKernel, args, nb.getNumForceThreadBlocks()*nb.getForceThreadBlockSize(), nb.getForceThreadBlockSize());
 
-        if (numexclusions > 0){
 
+        if (numexclusions > 0){
+            cout << "9" << endl;
             void* argsEx[] = {
                 &cu.getForce().getDevicePointer(),            //   forceBuffers, 
                 &cu.getEnergyBuffer().getDevicePointer(),     //   energyBuffer, 
