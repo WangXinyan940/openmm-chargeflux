@@ -420,6 +420,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
 
         computeNeighborListVoxelHash(*neighborList, numParticles, pos, exclusions, box, ifPBC, cutoff, 0.0);
         
+        /*
         for(auto& pair : *neighborList){
             int ii = pair.first;
             int jj = pair.second;
@@ -444,6 +445,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
 
             realSpaceEwaldEnergy += ONE_4PI_EPS0*realcharges[ii]*realcharges[jj]*inverseR*erfc(alphaR);
         }
+        */
 
         for(int p1=0;p1<numParticles;p1++){
             for(set<int>::iterator iter=exclusions[p1].begin(); iter != exclusions[p1].end(); iter++){
