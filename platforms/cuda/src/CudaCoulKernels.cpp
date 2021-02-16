@@ -472,6 +472,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         void* args_self[] = {
             &cu.getEnergyBuffer().getDevicePointer(),
             &dedq.getDevicePointer(),
+            &cu.getAtomIndexArray().getDevicePointer(),
             &realcharges_cu.getDevicePointer()
         };
         cu.executeKernel(calcEwaldSelfEnerKernel, args_self, numParticles);
