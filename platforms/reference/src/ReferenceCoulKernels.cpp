@@ -304,7 +304,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
     int numParticles = pos.size();
     updateRealCharge(pos, box);
     for(int ii=0;ii<dqdx_dqidx.size();ii++){
-        cout << dqdx_dqidx[ii] << " " << dqdx_dxidx[ii] << " " << dqdx_val[ii] << endl;
+        cout << dqdx_dqidx[ii] << " " << dqdx_dxidx[ii] << " " << dqdx_val[3*ii] << " " << dqdx_val[3*ii+1] << " " << dqdx_val[3*ii+2] << endl;
     }
     double energy = 0.0;    
     double dEdR;
