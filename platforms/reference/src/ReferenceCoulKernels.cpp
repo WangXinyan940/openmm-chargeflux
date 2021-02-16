@@ -464,15 +464,22 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                             forces[p1][kk] -= fconst;
                             forces[p2][kk] += fconst;
                         }
-                    dedq[p1] -= ONE_4PI_EPS0*realcharges[p2]*inverseR * erfc(alphaR);
-                    dedq[p2] -= ONE_4PI_EPS0*realcharges[p1]*inverseR * erfc(alphaR);
+                    dedq[p1] -= ONE_4PI_EPS0*realcharges[p2]*inverseR*erfc(alphaR);
+                    dedq[p2] -= ONE_4PI_EPS0*realcharges[p1]*inverseR*erfc(alphaR);
                     }
 
                     realSpaceException -= ONE_4PI_EPS0*realcharges[p1]*realcharges[p2]*inverseR*erf(alphaR);
                 }
             }
         }
-
+        // calc dEdQ * dQdX
+        for(int ii=0;ii<dqdx_dqidx.size();ii++){
+            int p1 = dqdx_dqidx[ii];
+            int p2 = dqdx_dxidx[ii];
+            for(int jj=0;jj<3;jj++){
+                forces[p2][jj] -= dedq[p1] * dqdx_val[3*ii+jj];
+            }
+        }
         energy = selfEwaldEnergy + recipEnergy + realSpaceEwaldEnergy + realSpaceException;
     } 
     return energy;
