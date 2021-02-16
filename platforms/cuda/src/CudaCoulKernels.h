@@ -46,6 +46,10 @@ private:
     OpenMM::CudaArray fbond_idx, fangle_idx;
     OpenMM::CudaArray fbond_params, fangle_params;
     OpenMM::CudaContext& cu;
+    OpenMM::CudaArray dedq;
+    OpenMM::CudaArray dqdx_dqidx;
+    OpenMM::CudaArray dqdx_dxidx;
+    OpenMM::CudaArray dqdx_val;
     CUfunction calcNoPBCEnForcesKernel;
     CUfunction calcNoPBCExclusionsKernel;
     CUfunction calcEwaldSelfEnerKernel;
@@ -56,6 +60,7 @@ private:
     CUfunction indexAtomKernel;
     CUfunction calcRealChargeKernel;
     CUfunction copyChargeKernel;
+    CUfunction multdQdXKernel;
     double cutoff;
     std::vector<std::vector<int>> exclusions;
     int numexclusions;

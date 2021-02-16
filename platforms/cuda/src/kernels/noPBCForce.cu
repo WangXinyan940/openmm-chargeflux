@@ -1,13 +1,14 @@
 extern "C" __global__ void calcNoPBCEnForces(
     mixed*              __restrict__     energyBuffer,
-    real4*              __restrict__     posq,
+    const real4*        __restrict__     posq,
     unsigned long long* __restrict__     forceBuffers,
-    real*               __restrict__     charges,
-    int*                __restrict__     atomIndex,
-    int*                __restrict__     pairidx0,
-    int*                __restrict__     pairidx1,
-    int                                  numParticles,
-    int                                  paddedNumAtoms) {
+    const real*         __restrict__     charges,
+    real*               __restrict__     dedq,
+    const int*          __restrict__     atomIndex,
+    const int*          __restrict__     pairidx0,
+    const int*          __restrict__     pairidx1,
+    const int                            numParticles,
+    const int                            paddedNumAtoms) {
     int totpair = numParticles * (numParticles - 1) / 2;
     for (int npair = blockIdx.x*blockDim.x+threadIdx.x; npair < totpair; npair += blockDim.x*gridDim.x) {
         int ii = pairidx0[npair];
@@ -25,20 +26,24 @@ extern "C" __global__ void calcNoPBCEnForces(
         atomicAdd(&forceBuffers[jj], static_cast<unsigned long long>((long long) (-force.x*0x100000000)));
         atomicAdd(&forceBuffers[jj+paddedNumAtoms], static_cast<unsigned long long>((long long) (-force.y*0x100000000)));
         atomicAdd(&forceBuffers[jj+2*paddedNumAtoms], static_cast<unsigned long long>((long long) (-force.z*0x100000000)));
+
+        atomicAdd(&dedq[atomIndex[ii]], ONE_4PI_EPS0*charges[atomIndex[jj]]*inverseR);
+        atomicAdd(&dedq[atomIndex[jj]], ONE_4PI_EPS0*charges[atomIndex[ii]]*inverseR);
     }
 }
 
 extern "C" __global__ void calcNoPBCExclusions(
     mixed*              __restrict__     energyBuffer,
-    real4*              __restrict__     posq,
+    const real4*        __restrict__     posq,
     unsigned long long* __restrict__     forceBuffers,
-    real*               __restrict__     charges,
-    int*                __restrict__     atomIndex,
-    int*                __restrict__     expairidx0,
-    int*                __restrict__     expairidx1,
-    int                                  totpair,
-    int                                  numParticles,
-    int                                  paddedNumAtoms) {
+    const real*         __restrict__     charges,
+    real*               __restrict__     dedq,
+    const int*          __restrict__     atomIndex,
+    const int*          __restrict__     expairidx0,
+    const int*          __restrict__     expairidx1,
+    const int                            totpair,
+    const int                            numParticles,
+    const int                            paddedNumAtoms) {
     for (int npair = blockIdx.x*blockDim.x+threadIdx.x; npair < totpair; npair += blockDim.x*gridDim.x) {
         int ii = expairidx0[npair];
         int jj = expairidx1[npair];
@@ -55,5 +60,8 @@ extern "C" __global__ void calcNoPBCExclusions(
         atomicAdd(&forceBuffers[jj], static_cast<unsigned long long>((long long) (-force.x*0x100000000)));
         atomicAdd(&forceBuffers[jj+paddedNumAtoms], static_cast<unsigned long long>((long long) (-force.y*0x100000000)));
         atomicAdd(&forceBuffers[jj+2*paddedNumAtoms], static_cast<unsigned long long>((long long) (-force.z*0x100000000)));
+
+        atomicAdd(&dedq[atomIndex[ii]], -ONE_4PI_EPS0*charges[atomIndex[jj]]*inverseR);
+        atomicAdd(&dedq[atomIndex[jj]], -ONE_4PI_EPS0*charges[atomIndex[ii]]*inverseR);
     }
 }

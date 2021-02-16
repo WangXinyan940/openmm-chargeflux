@@ -172,6 +172,97 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         fangle_params.upload(faprms);
     }
 
+    vector<int> dqdx_dqidx_v;
+    vector<int> dqdx_dxidx_v;
+
+    for(int ii=0;ii<numFluxBonds;ii++){
+        int p1, p2;
+        double k, b;
+        force.getFluxBondParameters(ii, p1, p2, k, b);
+        // p1-p1
+        dqdx_dqidx_v.push_back(p1);
+        dqdx_dxidx_v.push_back(p1);
+
+        // p1-p2
+        dqdx_dqidx_v.push_back(p1);
+        dqdx_dxidx_v.push_back(p2);
+
+        // p2-p1
+        dqdx_dqidx_v.push_back(p2);
+        dqdx_dxidx_v.push_back(p1);
+
+        // p2-p2
+        dqdx_dqidx_v.push_back(p2);
+        dqdx_dxidx_v.push_back(p2);
+
+    }
+
+    for(int ii=0;ii<numFluxAngles;ii++){
+        int p1, p2, p3;
+        double k, theta;
+        force.getFluxAngleParameters(ii, p1, p2, p3, k, theta);
+        // p1-p1
+        dqdx_dqidx_v.push_back(p1);
+        dqdx_dxidx_v.push_back(p1);
+        // p1-p2
+        dqdx_dqidx_v.push_back(p1);
+        dqdx_dxidx_v.push_back(p2);
+        // p1-p3
+        dqdx_dqidx_v.push_back(p1);
+        dqdx_dxidx_v.push_back(p3);
+        // p2-p1
+        dqdx_dqidx_v.push_back(p2);
+        dqdx_dxidx_v.push_back(p1);
+        // p2-p2
+        dqdx_dqidx_v.push_back(p2);
+        dqdx_dxidx_v.push_back(p2);
+        // p2-p3
+        dqdx_dqidx_v.push_back(p2);
+        dqdx_dxidx_v.push_back(p3);
+        // p3-p1
+        dqdx_dqidx_v.push_back(p3);
+        dqdx_dxidx_v.push_back(p1);
+        // p3-p2
+        dqdx_dqidx_v.push_back(p3);
+        dqdx_dxidx_v.push_back(p2);
+        // p3-p3
+        dqdx_dqidx_v.push_back(p3);
+        dqdx_dxidx_v.push_back(p3);
+    }
+
+    dqdx_dqidx.initialize(cu, dqdx_dqidx_v.size(), sizeof(int), "dqdx_dqidx");
+    dqdx_dqidx.upload(dqdx_dqidx_v);
+    dqdx_dxidx.initialize(cu, dqdx_dxidx_v.size(), sizeof(int), "dqdx_dxidx");
+    dqdx_dxidx.upload(dqdx_dxidx_v);
+
+    if (cu.getUseDoublePrecision()){
+        vector<double> dedq_v;
+        vector<double> dqdx_val_v;
+        for(int ii=0;ii<numParticles;ii++){
+            dedq_v.push_back(0);
+        }
+        for(int ii=0;ii<dqdx_dqidx_v.size()*3;ii++){
+            dqdx_val_v.push_back(0);
+        }
+        dedq.initialize(cu, dedq_v.size(), elementSize, "dedq");
+        dedq.upload(dedq_v);
+        dqdx_val.initialize(cu, dqdx_val_v.size(), elementSize, "dqdx_val");
+        dqdx_val.upload(dqdx_val_v);
+    } else {
+        vector<float> dedq_v;
+        vector<float> dqdx_val_v;
+        for(int ii=0;ii<numParticles;ii++){
+            dedq_v.push_back(0);
+        }
+        for(int ii=0;ii<dqdx_dqidx_v.size()*3;ii++){
+            dqdx_val_v.push_back(0);
+        }
+        dedq.initialize(cu, dedq_v.size(), elementSize, "dedq");
+        dedq.upload(dedq_v);
+        dqdx_val.initialize(cu, dqdx_val_v.size(), elementSize, "dqdx_val");
+        dqdx_val.upload(dqdx_val_v);
+    }
+
     numexclusions = force.getNumExceptions();
     if (numexclusions > 0){
         vector<int> exidx0, exidx1;
@@ -196,10 +287,12 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
     defRealCharges["NUM_FLUX_BONDS"] = cu.intToString(numFluxBonds);
     defRealCharges["NUM_FLUX_ANGLES"] = cu.intToString(numFluxAngles);
     defRealCharges["NUM_ATOMS"] = cu.intToString(numParticles);
+    defRealCharges["NUM_DQDX_PAIRS"] = cu.intToString(numFluxBonds * 4 + numFluxAngles * 12);
 
     CUmodule module = cu.createModule(CudaKernelSources::vectorOps + CudaCoulKernelSources::calcChargeFlux, defRealCharges);
     calcRealChargeKernel = cu.getKernel(module, "calcRealCharge");
     copyChargeKernel = cu.getKernel(module, "copyCharge");
+    multdQdXKernel = cu.getKernel(module, "multdQdX");
 
     if (!ifPBC){
         map<string, string> defines;
@@ -286,7 +379,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         pbcDefines["LAST_EXCLUSION_TILE"] = cu.intToString(endExclusionIndex);
         pbcDefines["USE_PERIODIC"] = "1";
         pbcDefines["USE_CUTOFF"] = "1";
-        pbcDefines["USE_EXCLUSIONS"] = "";
+        // pbcDefines["USE_EXCLUSIONS"] = "";
         pbcDefines["USE_SYMMETRIC"] = "1";
         pbcDefines["INCLUDE_FORCES"] = "1";
         pbcDefines["INCLUDE_ENERGY"] = "1";
@@ -332,6 +425,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         cu.executeKernel(indexAtomKernel, argSwitch, numParticles);
         void* argUpdateCharge[] = {
             &realcharges_cu.getDevicePointer(),
+            &dedq.getDevicePointer(),
             &charges_cu.getDevicePointer()
         };
         cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
@@ -339,6 +433,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         if (numFluxAngles + numFluxBonds > 0){
             void* args_realc[] = {
                 &realcharges_cu.getDevicePointer(),
+                &dqdx_val.getDevicePointer(),
                 &cu.getPosq().getDevicePointer(),
                 &fbond_idx.getDevicePointer(),
                 &fbond_params.getDevicePointer(),
@@ -436,12 +531,14 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
     } else {
         void* argUpdateCharge[] = {
             &realcharges_cu.getDevicePointer(),
+            &dedq.getDevicePointer(),
             &charges_cu.getDevicePointer()
         };
         cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
         if (numFluxAngles + numFluxBonds > 0){
             void* args_realc[] = {
                 &realcharges_cu.getDevicePointer(),
+                &dqdx_val.getDevicePointer(),
                 &cu.getPosq().getDevicePointer(),
                 &fbond_idx.getDevicePointer(),
                 &fbond_params.getDevicePointer(),
@@ -457,6 +554,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             &cu.getPosq().getDevicePointer(), 
             &cu.getForce().getDevicePointer(), 
             &realcharges_cu.getDevicePointer(), 
+            &dedq.getDevicePointer(),
             &cu.getAtomIndexArray().getDevicePointer(),
             &pairidx0.getDevicePointer(), 
             &pairidx1.getDevicePointer(), 
@@ -470,6 +568,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 &cu.getPosq().getDevicePointer(), 
                 &cu.getForce().getDevicePointer(), 
                 &realcharges_cu.getDevicePointer(), 
+                &dedq.getDevicePointer(),
                 &cu.getAtomIndexArray().getDevicePointer(),
                 &expairidx0.getDevicePointer(), 
                 &expairidx1.getDevicePointer(), 
@@ -478,6 +577,16 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 &paddedNumAtoms
             };
             cu.executeKernel(calcNoPBCExclusionsKernel, args2, numexclusions);
+        }
+        if (numFluxAngles + numFluxBonds > 0) {
+            void* argsMult[] = {
+                &cu.getForce().getDevicePointer(),    // unsigned long long*   __restrict__    forceBuffers, 
+                &dedq.getDevicePointer(),             // const real*           __restrict__    dedq,
+                &dqdx_dqidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dqidx,
+                &dqdx_dxidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dxidx,
+                &dqdx_val.getDevicePointer()          // const real*           __restrict__    dqdx_val
+            };
+            cu.executeKernel(multdQdXKernel, argsMult, 4*numFluxBonds+12*numFluxAngles);
         }
     }
     return energy;

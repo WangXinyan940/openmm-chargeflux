@@ -1,15 +1,18 @@
 extern "C" __global__ void copyCharge(
     real*            __restrict__  realcharges,
+    real*            __restrict__  dedq,
     const real*      __restrict__  charges
 ){
     for (int natom = blockIdx.x*blockDim.x+threadIdx.x; natom < NUM_ATOMS; natom += blockDim.x*gridDim.x){
         real newc = charges[natom];
         realcharges[natom] = newc;
+        dedq[natom] = 0;
     }
 }
 
 extern "C" __global__ void calcRealCharge(
     real*             __restrict__  realcharges,
+    real*             __restrict__  dqdx_val,
     const real4*      __restrict__  posq,
 #ifdef USE_PBC
     const int*        __restrict__  fbond_idx,
@@ -52,6 +55,25 @@ extern "C" __global__ void calcRealCharge(
             real dq = k * (r - b);
             atomicAdd(&realcharges[idx1], dq);
             atomicAdd(&realcharges[idx2], -dq);
+
+            int pair1 = 3 * 4 * npair;
+            int pair2 = 3 * (4 * npair + 1);
+            int pair3 = 3 * (4 * npair + 2);
+            int pair4 = 3 * (4 * npair + 3);
+            real constant = k * invR;
+            real3 val = constant * delta;
+            atomicAdd(&dqdx_val[pair1], -val.x);
+            atomicAdd(&dqdx_val[pair2],  val.x);
+            atomicAdd(&dqdx_val[pair3],  val.x);
+            atomicAdd(&dqdx_val[pair4], -val.x);
+            atomicAdd(&dqdx_val[pair1+1], -val.y);
+            atomicAdd(&dqdx_val[pair2+1],  val.y);
+            atomicAdd(&dqdx_val[pair3+1],  val.y);
+            atomicAdd(&dqdx_val[pair4+1], -val.y);
+            atomicAdd(&dqdx_val[pair1+2], -val.z);
+            atomicAdd(&dqdx_val[pair2+2],  val.z);
+            atomicAdd(&dqdx_val[pair3+2],  val.z);
+            atomicAdd(&dqdx_val[pair4+2], -val.z);
         } else {
             // angle
             int pidx = npair - NUM_FLUX_BONDS;
@@ -90,12 +112,75 @@ extern "C" __global__ void calcRealCharge(
             // real invR13 = RSQRT(r13_2);
             // real r13 = r13_2 * invR13;
 
-            real angle = ACOS((r23_2 + r21_2 - r13_2) * 0.5 * invR21 * invR23);
+            real cost = (r23_2 + r21_2 - r13_2) * 0.5 * invR21 * invR23;
+            real angle = ACOS(cost);
 
             real dq = k * (angle - theta);
             atomicAdd(&realcharges[idx1], dq);
             atomicAdd(&realcharges[idx3], dq);
             atomicAdd(&realcharges[idx2], -2 * dq);
+
+            int pair1 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii);
+            int pair2 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii + 1);
+            int pair3 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii + 2);
+            int pair4 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii + 3);
+            int pair5 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii + 4);
+            int pair6 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii + 5);
+            int pair7 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii + 6);
+            int pair8 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii + 7);
+            int pair9 = 3 * (4 * NUM_FLUX_BONDS + 9 * ii + 8);
+            real one_const = RSQRT(1 - cost*cost);
+            real fin_const1 = k * invR21 * invR23 * one_const;
+            real fin_const2_r21 = k * cost * one_const * invR21 * invR21;
+            real fin_const2_r23 = k * cost * one_const * invR23 * invR23;
+
+            real3 v1 = - fin_const1 * d23 + fin_const2_r21 * d21;
+            real3 v3 = - fin_const1 * d21 + fin_const2_r23 * d23;
+            real3 v2 = - v1 - v3;
+
+            atomicAdd(&dqdx_val[pair1], v1.x);
+            atomicAdd(&dqdx_val[pair2], v2.x);
+            atomicAdd(&dqdx_val[pair3], v3.x);
+            atomicAdd(&dqdx_val[pair4], -2 * v1.x);
+            atomicAdd(&dqdx_val[pair5], -2 * v2.x);
+            atomicAdd(&dqdx_val[pair6], -2 * v3.x);
+            atomicAdd(&dqdx_val[pair7], v1.x);
+            atomicAdd(&dqdx_val[pair8], v2.x);
+            atomicAdd(&dqdx_val[pair9], v3.x);
+            atomicAdd(&dqdx_val[pair1+1], v1.y);
+            atomicAdd(&dqdx_val[pair2+1], v2.y);
+            atomicAdd(&dqdx_val[pair3+1], v3.y);
+            atomicAdd(&dqdx_val[pair4+1], -2 * v1.y);
+            atomicAdd(&dqdx_val[pair5+1], -2 * v2.y);
+            atomicAdd(&dqdx_val[pair6+1], -2 * v3.y);
+            atomicAdd(&dqdx_val[pair7+1], v1.y);
+            atomicAdd(&dqdx_val[pair8+1], v2.y);
+            atomicAdd(&dqdx_val[pair9+1], v3.y);
+            atomicAdd(&dqdx_val[pair1+2], v1.z);
+            atomicAdd(&dqdx_val[pair2+2], v2.z);
+            atomicAdd(&dqdx_val[pair3+2], v3.z);
+            atomicAdd(&dqdx_val[pair4+2], -2 * v1.z);
+            atomicAdd(&dqdx_val[pair5+2], -2 * v2.z);
+            atomicAdd(&dqdx_val[pair6+2], -2 * v3.z);
+            atomicAdd(&dqdx_val[pair7+2], v1.z);
+            atomicAdd(&dqdx_val[pair8+2], v2.z);
+            atomicAdd(&dqdx_val[pair9+2], v3.z);
         }
+    }
+}
+
+extern "C" __global__ void multdQdX(
+    unsigned long long*   __restrict__    forceBuffers, 
+    const real*           __restrict__    dedq,
+    const int*            __restrict__    dqdx_dqidx,
+    const int*            __restrict__    dqdx_dxidx,
+    const real*           __restrict__    dqdx_val
+){
+    for (int npair = blockIdx.x*blockDim.x+threadIdx.x; npair < NUM_DQDX_PAIRS; npair += blockDim.x*gridDim.x){
+        int p1 = dqdx_dqidx[npair];
+        int p2 = dqdx_dxidx[npair];
+        atomicAdd(&forceBuffers[p2], static_cast<unsigned long long>((long long) (-dedq[p1]*dqdx_val[3*npair]*0x100000000)));
+        atomicAdd(&forceBuffers[p2+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (-dedq[p1]*dqdx_val[3*npair+1]*0x100000000)));
+        atomicAdd(&forceBuffers[p2+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (-dedq[p1]*dqdx_val[3*npair+2]*0x100000000)));
     }
 }
