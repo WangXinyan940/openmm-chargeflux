@@ -94,35 +94,38 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         vector<double> fbprms, faprms;
         numFluxBonds = force.getNumFluxBonds();
         numFluxAngles = force.getNumFluxAngles();
-
-        for(int ii=0;ii<numFluxBonds;ii++){
-            int idx1, idx2;
-            double k, b;
-            force.getFluxBondParameters(ii, idx1, idx2, k, b);
-            fbidx.push_back(idx1);
-            fbidx.push_back(idx2);
-            fbprms.push_back(k);
-            fbprms.push_back(b);
+        if (numFluxBonds > 0){
+            for(int ii=0;ii<numFluxBonds;ii++){
+                int idx1, idx2;
+                double k, b;
+                force.getFluxBondParameters(ii, idx1, idx2, k, b);
+                fbidx.push_back(idx1);
+                fbidx.push_back(idx2);
+                fbprms.push_back(k);
+                fbprms.push_back(b);
+            }
+            fbond_idx.initialize(cu, numFluxBonds*2, sizeof(int), "fbondidx");
+            fbond_idx.upload(fbidx);
+            fbond_params.initialize(cu, numFluxBonds*2, elementSize, "fbondprms");
+            fbond_params.upload(fbprms);
         }
-        fbond_idx.initialize(cu, numFluxBonds*2, sizeof(int), "fbondidx");
-        fbond_idx.upload(fbidx);
-        fbond_params.initialize(cu, numFluxBonds*2, elementSize, "fbondprms");
-        fbond_params.upload(fbprms);
 
-        for(int ii=0;ii<numFluxAngles;ii++){
-            int idx1, idx2, idx3;
-            double k, theta;
-            force.getFluxAngleParameters(ii, idx1, idx2, idx3, k, theta);
-            faidx.push_back(idx1);
-            faidx.push_back(idx2);
-            faidx.push_back(idx3);
-            faprms.push_back(k);
-            faprms.push_back(theta);
+        if (numFluxAngles > 0){
+            for(int ii=0;ii<numFluxAngles;ii++){
+                int idx1, idx2, idx3;
+                double k, theta;
+                force.getFluxAngleParameters(ii, idx1, idx2, idx3, k, theta);
+                faidx.push_back(idx1);
+                faidx.push_back(idx2);
+                faidx.push_back(idx3);
+                faprms.push_back(k);
+                faprms.push_back(theta);
+            }
+            fangle_idx.initialize(cu, numFluxAngles*3, sizeof(int), "fangleidx");
+            fangle_idx.upload(faidx);
+            fangle_params.initialize(cu, numFluxAngles*2, elementSize, "fangleprms");
+            fangle_params.upload(faprms);
         }
-        fangle_idx.initialize(cu, numFluxAngles*3, sizeof(int), "fangleidx");
-        fangle_idx.upload(faidx);
-        fangle_params.initialize(cu, numFluxAngles*2, elementSize, "fangleprms");
-        fangle_params.upload(faprms);
 
     } else {
         vector<float> parameters;
@@ -142,125 +145,131 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         numFluxBonds = force.getNumFluxBonds();
         numFluxAngles = force.getNumFluxAngles();
 
-        for(int ii=0;ii<numFluxBonds;ii++){
-            int idx1, idx2;
-            double k, b;
-            force.getFluxBondParameters(ii, idx1, idx2, k, b);
-            fbidx.push_back(idx1);
-            fbidx.push_back(idx2);
-            fbprms.push_back(k);
-            fbprms.push_back(b);
+        if (numFluxBonds > 0){
+            for(int ii=0;ii<numFluxBonds;ii++){
+                int idx1, idx2;
+                double k, b;
+                force.getFluxBondParameters(ii, idx1, idx2, k, b);
+                fbidx.push_back(idx1);
+                fbidx.push_back(idx2);
+                fbprms.push_back(k);
+                fbprms.push_back(b);
+            }
+            fbond_idx.initialize(cu, numFluxBonds*2, sizeof(int), "fbondidx");
+            fbond_idx.upload(fbidx);
+            fbond_params.initialize(cu, numFluxBonds*2, elementSize, "fbondprms");
+            fbond_params.upload(fbprms);
         }
-        fbond_idx.initialize(cu, numFluxBonds*2, sizeof(int), "fbondidx");
-        fbond_idx.upload(fbidx);
-        fbond_params.initialize(cu, numFluxBonds*2, elementSize, "fbondprms");
-        fbond_params.upload(fbprms);
+
+        if (numFluxAngles > 0){
+            for(int ii=0;ii<numFluxAngles;ii++){
+                int idx1, idx2, idx3;
+                double k, theta;
+                force.getFluxAngleParameters(ii, idx1, idx2, idx3, k, theta);
+                faidx.push_back(idx1);
+                faidx.push_back(idx2);
+                faidx.push_back(idx3);
+                faprms.push_back(k);
+                faprms.push_back(theta);
+            }
+            fangle_idx.initialize(cu, numFluxAngles*3, sizeof(int), "fangleidx");
+            fangle_idx.upload(faidx);
+            fangle_params.initialize(cu, numFluxAngles*2, elementSize, "fangleprms");
+            fangle_params.upload(faprms);
+        }
+    }
+
+    if (numFluxAngles + numFluxBonds > 0){
+        vector<int> dqdx_dqidx_v;
+        vector<int> dqdx_dxidx_v;
+
+        for(int ii=0;ii<numFluxBonds;ii++){
+            int p1, p2;
+            double k, b;
+            force.getFluxBondParameters(ii, p1, p2, k, b);
+            // p1-p1
+            dqdx_dqidx_v.push_back(p1);
+            dqdx_dxidx_v.push_back(p1);
+
+            // p1-p2
+            dqdx_dqidx_v.push_back(p1);
+            dqdx_dxidx_v.push_back(p2);
+
+            // p2-p1
+            dqdx_dqidx_v.push_back(p2);
+            dqdx_dxidx_v.push_back(p1);
+
+            // p2-p2
+            dqdx_dqidx_v.push_back(p2);
+            dqdx_dxidx_v.push_back(p2);
+
+        }
 
         for(int ii=0;ii<numFluxAngles;ii++){
-            int idx1, idx2, idx3;
+            int p1, p2, p3;
             double k, theta;
-            force.getFluxAngleParameters(ii, idx1, idx2, idx3, k, theta);
-            faidx.push_back(idx1);
-            faidx.push_back(idx2);
-            faidx.push_back(idx3);
-            faprms.push_back(k);
-            faprms.push_back(theta);
+            force.getFluxAngleParameters(ii, p1, p2, p3, k, theta);
+            // p1-p1
+            dqdx_dqidx_v.push_back(p1);
+            dqdx_dxidx_v.push_back(p1);
+            // p1-p2
+            dqdx_dqidx_v.push_back(p1);
+            dqdx_dxidx_v.push_back(p2);
+            // p1-p3
+            dqdx_dqidx_v.push_back(p1);
+            dqdx_dxidx_v.push_back(p3);
+            // p2-p1
+            dqdx_dqidx_v.push_back(p2);
+            dqdx_dxidx_v.push_back(p1);
+            // p2-p2
+            dqdx_dqidx_v.push_back(p2);
+            dqdx_dxidx_v.push_back(p2);
+            // p2-p3
+            dqdx_dqidx_v.push_back(p2);
+            dqdx_dxidx_v.push_back(p3);
+            // p3-p1
+            dqdx_dqidx_v.push_back(p3);
+            dqdx_dxidx_v.push_back(p1);
+            // p3-p2
+            dqdx_dqidx_v.push_back(p3);
+            dqdx_dxidx_v.push_back(p2);
+            // p3-p3
+            dqdx_dqidx_v.push_back(p3);
+            dqdx_dxidx_v.push_back(p3);
         }
-        fangle_idx.initialize(cu, numFluxAngles*3, sizeof(int), "fangleidx");
-        fangle_idx.upload(faidx);
-        fangle_params.initialize(cu, numFluxAngles*2, elementSize, "fangleprms");
-        fangle_params.upload(faprms);
-    }
 
-    vector<int> dqdx_dqidx_v;
-    vector<int> dqdx_dxidx_v;
+        dqdx_dqidx.initialize(cu, dqdx_dqidx_v.size(), sizeof(int), "dqdx_dqidx");
+        dqdx_dqidx.upload(dqdx_dqidx_v);
+        dqdx_dxidx.initialize(cu, dqdx_dxidx_v.size(), sizeof(int), "dqdx_dxidx");
+        dqdx_dxidx.upload(dqdx_dxidx_v);
 
-    for(int ii=0;ii<numFluxBonds;ii++){
-        int p1, p2;
-        double k, b;
-        force.getFluxBondParameters(ii, p1, p2, k, b);
-        // p1-p1
-        dqdx_dqidx_v.push_back(p1);
-        dqdx_dxidx_v.push_back(p1);
-
-        // p1-p2
-        dqdx_dqidx_v.push_back(p1);
-        dqdx_dxidx_v.push_back(p2);
-
-        // p2-p1
-        dqdx_dqidx_v.push_back(p2);
-        dqdx_dxidx_v.push_back(p1);
-
-        // p2-p2
-        dqdx_dqidx_v.push_back(p2);
-        dqdx_dxidx_v.push_back(p2);
-
-    }
-
-    for(int ii=0;ii<numFluxAngles;ii++){
-        int p1, p2, p3;
-        double k, theta;
-        force.getFluxAngleParameters(ii, p1, p2, p3, k, theta);
-        // p1-p1
-        dqdx_dqidx_v.push_back(p1);
-        dqdx_dxidx_v.push_back(p1);
-        // p1-p2
-        dqdx_dqidx_v.push_back(p1);
-        dqdx_dxidx_v.push_back(p2);
-        // p1-p3
-        dqdx_dqidx_v.push_back(p1);
-        dqdx_dxidx_v.push_back(p3);
-        // p2-p1
-        dqdx_dqidx_v.push_back(p2);
-        dqdx_dxidx_v.push_back(p1);
-        // p2-p2
-        dqdx_dqidx_v.push_back(p2);
-        dqdx_dxidx_v.push_back(p2);
-        // p2-p3
-        dqdx_dqidx_v.push_back(p2);
-        dqdx_dxidx_v.push_back(p3);
-        // p3-p1
-        dqdx_dqidx_v.push_back(p3);
-        dqdx_dxidx_v.push_back(p1);
-        // p3-p2
-        dqdx_dqidx_v.push_back(p3);
-        dqdx_dxidx_v.push_back(p2);
-        // p3-p3
-        dqdx_dqidx_v.push_back(p3);
-        dqdx_dxidx_v.push_back(p3);
-    }
-
-    dqdx_dqidx.initialize(cu, dqdx_dqidx_v.size(), sizeof(int), "dqdx_dqidx");
-    dqdx_dqidx.upload(dqdx_dqidx_v);
-    dqdx_dxidx.initialize(cu, dqdx_dxidx_v.size(), sizeof(int), "dqdx_dxidx");
-    dqdx_dxidx.upload(dqdx_dxidx_v);
-
-    if (cu.getUseDoublePrecision()){
-        vector<double> dedq_v;
-        vector<double> dqdx_val_v;
-        for(int ii=0;ii<numParticles;ii++){
-            dedq_v.push_back(0);
+        if (cu.getUseDoublePrecision()){
+            vector<double> dedq_v;
+            vector<double> dqdx_val_v;
+            for(int ii=0;ii<numParticles;ii++){
+                dedq_v.push_back(0);
+            }
+            for(int ii=0;ii<dqdx_dqidx_v.size()*3;ii++){
+                dqdx_val_v.push_back(0);
+            }
+            dedq.initialize(cu, dedq_v.size(), elementSize, "dedq");
+            dedq.upload(dedq_v);
+            dqdx_val.initialize(cu, dqdx_val_v.size(), elementSize, "dqdx_val");
+            dqdx_val.upload(dqdx_val_v);
+        } else {
+            vector<float> dedq_v;
+            vector<float> dqdx_val_v;
+            for(int ii=0;ii<numParticles;ii++){
+                dedq_v.push_back(0);
+            }
+            for(int ii=0;ii<dqdx_dqidx_v.size()*3;ii++){
+                dqdx_val_v.push_back(0);
+            }
+            dedq.initialize(cu, dedq_v.size(), elementSize, "dedq");
+            dedq.upload(dedq_v);
+            dqdx_val.initialize(cu, dqdx_val_v.size(), elementSize, "dqdx_val");
+            dqdx_val.upload(dqdx_val_v);
         }
-        for(int ii=0;ii<dqdx_dqidx_v.size()*3;ii++){
-            dqdx_val_v.push_back(0);
-        }
-        dedq.initialize(cu, dedq_v.size(), elementSize, "dedq");
-        dedq.upload(dedq_v);
-        dqdx_val.initialize(cu, dqdx_val_v.size(), elementSize, "dqdx_val");
-        dqdx_val.upload(dqdx_val_v);
-    } else {
-        vector<float> dedq_v;
-        vector<float> dqdx_val_v;
-        for(int ii=0;ii<numParticles;ii++){
-            dedq_v.push_back(0);
-        }
-        for(int ii=0;ii<dqdx_dqidx_v.size()*3;ii++){
-            dqdx_val_v.push_back(0);
-        }
-        dedq.initialize(cu, dedq_v.size(), elementSize, "dedq");
-        dedq.upload(dedq_v);
-        dqdx_val.initialize(cu, dqdx_val_v.size(), elementSize, "dqdx_val");
-        dqdx_val.upload(dqdx_val_v);
     }
 
     numexclusions = force.getNumExceptions();
