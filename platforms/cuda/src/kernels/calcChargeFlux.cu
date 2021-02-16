@@ -172,13 +172,21 @@ extern "C" __global__ void calcRealCharge(
 extern "C" __global__ void multdQdX(
     unsigned long long*   __restrict__    forceBuffers, 
     const real*           __restrict__    dedq,
+#ifdef USE_PBC
+    const int*            __restrict__    indexAtom,
+#endif
     const int*            __restrict__    dqdx_dqidx,
     const int*            __restrict__    dqdx_dxidx,
     const real*           __restrict__    dqdx_val
 ){
     for (int npair = blockIdx.x*blockDim.x+threadIdx.x; npair < NUM_DQDX_PAIRS; npair += blockDim.x*gridDim.x){
+#ifdef USE_PBC
+        int p1 = indexAtom[dqdx_dqidx[npair]];
+        int p2 = indexAtom[dqdx_dxidx[npair]];
+#else
         int p1 = dqdx_dqidx[npair];
         int p2 = dqdx_dxidx[npair];
+#endif
         atomicAdd(&forceBuffers[p2], static_cast<unsigned long long>((long long) (-dedq[p1]*dqdx_val[3*npair]*0x100000000)));
         atomicAdd(&forceBuffers[p2+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (-dedq[p1]*dqdx_val[3*npair+1]*0x100000000)));
         atomicAdd(&forceBuffers[p2+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (-dedq[p1]*dqdx_val[3*npair+2]*0x100000000)));

@@ -558,6 +558,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             void* argsMult[] = {
                 &cu.getForce().getDevicePointer(),    // unsigned long long*   __restrict__    forceBuffers, 
                 &dedq.getDevicePointer(),             // const real*           __restrict__    dedq,
+                &indexAtom.getDevicePointer(),
                 &dqdx_dqidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dqidx,
                 &dqdx_dxidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dxidx,
                 &dqdx_val.getDevicePointer()          // const real*           __restrict__    dqdx_val
