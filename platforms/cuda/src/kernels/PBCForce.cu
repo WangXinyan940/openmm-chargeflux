@@ -9,7 +9,7 @@ typedef struct {
     real x, y, z, q;
     real chrg;
     real fx, fy, fz;
-    real dedqv;
+    real dedq;
     real empty;
 } AtomData;
 
@@ -659,6 +659,9 @@ extern "C" __global__ void computeNonbonded(
         real tempEnergy = 0.0f;
         const real interactionScale = 1.0f;
 
+        real dedq1 = 0;
+        real dedq2 = 0;
+
         if (!isExcluded && r2 < cutoff2){
             real alphaR = EWALD_ALPHA * r;
 #ifdef USE_DOUBLE_PRECISION
@@ -669,8 +672,8 @@ extern "C" __global__ void computeNonbonded(
 #endif
             COMPUTE_INTERACTION;
 
-            real dedq1 =  ONE_4PI_EPS0 * atomData2.chrg * invR * erfcAlphaR;
-            real dedq2 =  ONE_4PI_EPS0 * atomData1.chrg * invR * erfcAlphaR;
+            dedq1 += ONE_4PI_EPS0 * atomData2.chrg * invR * erfcAlphaR;
+            dedq2 += ONE_4PI_EPS0 * atomData1.chrg * invR * erfcAlphaR;
         }
         
         energy += tempEnergy;
