@@ -371,7 +371,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
             dedq[ii] += - 2 * ONE_4PI_EPS0 * alpha / sqrt(M_PI) * realcharges[ii];
         }
         // calc reciprocal part
-        /*
+
         double recipX = 2 * M_PI / box[0][0];
         double recipY = 2 * M_PI / box[1][1];
         double recipZ = 2 * M_PI / box[2][2];
@@ -472,7 +472,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                 }
             }
         }
-        */
+
         // calc dEdQ * dQdX
         for(int ii=0;ii<dqdx_dqidx.size();ii++){
             int p1 = dqdx_dqidx[ii];
