@@ -270,9 +270,9 @@ extern "C" __global__ void computeNonbonded(
                     const real t = RECIP(1.0f+0.3275911f*alphaR);
                     const real erfcAlphaR = (0.254829592f+(-0.284496736f+(1.421413741f+(-1.453152027f+1.061405429f*t)*t)*t)*t)*t*expAlphaRSqr;
 #endif
-                    // COMPUTE_INTERACTION;
-                    // dedqv += ONE_4PI_EPS0 * atomData2.chrg * invR * erfcAlphaR;
-                    // localData[tbx+tj].dedq += ONE_4PI_EPS0 * atomData1.chrg * invR * erfcAlphaR;
+                    COMPUTE_INTERACTION;
+                    dedqv += ONE_4PI_EPS0 * atomData2.chrg * invR * erfcAlphaR;
+                    localData[tbx+tj].dedq += ONE_4PI_EPS0 * atomData1.chrg * invR * erfcAlphaR;
                 }
                 energy += tempEnergy;
 #ifdef INCLUDE_FORCES
