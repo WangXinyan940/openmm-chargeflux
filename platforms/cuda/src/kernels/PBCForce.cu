@@ -130,6 +130,7 @@ extern "C" __global__ void computeNonbonded(
         atomData1.y = posq1.y;
         atomData1.z = posq1.z;
         atomData1.chrg = charges[atomIndex[atom1]];
+        atomData1.dedq = 0;
 
 #ifdef USE_EXCLUSIONS
         tileflags excl = exclusions[pos*TILE_SIZE+tgx];
@@ -141,6 +142,7 @@ extern "C" __global__ void computeNonbonded(
             localData[threadIdx.x].y = posq1.y;
             localData[threadIdx.x].z = posq1.z;
             localData[threadIdx.x].chrg = charges[atomIndex[atom1]];
+            localData[threadIdx.x].dedq = 0;
 
             // we do not need to fetch parameters from global since this is a symmetric tile
             // instead we can broadcast the values using shuffle
@@ -218,6 +220,7 @@ extern "C" __global__ void computeNonbonded(
             localData[threadIdx.x].fy = 0.0f;
             localData[threadIdx.x].fz = 0.0f;
             localData[threadIdx.x].chrg = charges[atomIndex[j]];
+            localData[threadIdx.x].dedq = 0;
 
             
             
@@ -415,6 +418,7 @@ extern "C" __global__ void computeNonbonded(
                 localData[threadIdx.x].fy = 0.0f;
                 localData[threadIdx.x].fz = 0.0f;
                 localData[threadIdx.x].chrg = charges[atomIndex[j]];
+                localData[threadIdx.x].dedq = 0;
                 
             }
             else {
@@ -424,6 +428,7 @@ extern "C" __global__ void computeNonbonded(
                 localData[threadIdx.x].z = 0;
 
                 localData[threadIdx.x].chrg = 0.0;
+                localData[threadIdx.x].dedq = 0;
             }
 #ifdef USE_PERIODIC
             if (singlePeriodicCopy) {
