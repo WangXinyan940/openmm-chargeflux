@@ -624,7 +624,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 &numParticles, 
                 &paddedNumAtoms
             };
-            cu.executeKernel(calcNoPBCExclusionsKernel, args2, numexclusions);
+            // cu.executeKernel(calcNoPBCExclusionsKernel, args2, numexclusions);
         }
         if (numFluxAngles + numFluxBonds > 0) {
             cout << "P5" << endl;
