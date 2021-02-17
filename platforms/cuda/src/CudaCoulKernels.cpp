@@ -607,7 +607,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             &pairidx1.getDevicePointer(), 
             &numParticles, &paddedNumAtoms
         };
-        // cu.executeKernel(calcNoPBCEnForcesKernel, args, numParticles*(numParticles-1)/2);
+        cu.executeKernel(calcNoPBCEnForcesKernel, args, numParticles*(numParticles-1)/2);
 
         if (numexclusions > 0){
             cout << "P4" << endl;
@@ -624,7 +624,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 &numParticles, 
                 &paddedNumAtoms
             };
-            // cu.executeKernel(calcNoPBCExclusionsKernel, args2, numexclusions);
+            cu.executeKernel(calcNoPBCExclusionsKernel, args2, numexclusions);
         }
         if (numFluxAngles + numFluxBonds > 0) {
             cout << "P5" << endl;
