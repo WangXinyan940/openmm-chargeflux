@@ -17,7 +17,7 @@ extern "C" __global__ void calcNoPBCEnForces(
         real R2 = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
         real inverseR = RSQRT(R2);
         real c1c2 = charges[atomIndex[ii]] * charges[atomIndex[jj]];
-        energyBuffer[npair] += ONE_4PI_EPS0 * c1c2 * inverseR;
+        atomicAdd(&energyBuffer[ii], ONE_4PI_EPS0 * c1c2 * inverseR);
         real dEdRdR = ONE_4PI_EPS0 * c1c2 * inverseR * inverseR * inverseR;
         real3 force = - dEdRdR * delta;
         atomicAdd(&forceBuffers[ii], static_cast<unsigned long long>((long long) (force.x*0x100000000)));
