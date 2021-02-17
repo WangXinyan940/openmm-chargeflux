@@ -431,7 +431,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
 }
 
 double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces, bool includeEnergy) {
-
+    cout << "In" << endl;
     int numParticles = cu.getNumAtoms();
     double energy = 0.0;
 
@@ -573,6 +573,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         //     cu.executeKernel(printdQdXKernel, argsPrint, 4*numFluxBonds+9*numFluxAngles);
         // }
     } else {
+        cout << "P1" << endl;
         void* argUpdateCharge[] = {
             &realcharges_cu.getDevicePointer(),
             &dedq.getDevicePointer(),
@@ -580,6 +581,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         };
         cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
         if (numFluxAngles + numFluxBonds > 0){
+            cout << "P2" << endl;
             void* args_realc[] = {
                 &realcharges_cu.getDevicePointer(),
                 &dqdx_val.getDevicePointer(),
@@ -592,6 +594,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             cu.executeKernel(calcRealChargeKernel, args_realc, numFluxBonds + numFluxAngles);
         }
 
+        cout << "P3" << endl;
         int paddedNumAtoms = cu.getPaddedNumAtoms();
         void* args[] = {
             &cu.getEnergyBuffer().getDevicePointer(), 
@@ -607,6 +610,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         cu.executeKernel(calcNoPBCEnForcesKernel, args, numParticles*(numParticles-1)/2);
 
         if (numexclusions > 0){
+            cout << "P4" << endl;
             void* args2[] = {
                 &cu.getEnergyBuffer().getDevicePointer(), 
                 &cu.getPosq().getDevicePointer(), 
@@ -623,6 +627,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             cu.executeKernel(calcNoPBCExclusionsKernel, args2, numexclusions);
         }
         if (numFluxAngles + numFluxBonds > 0) {
+            cout << "P5" << endl;
             void* argsMult[] = {
                 &cu.getForce().getDevicePointer(),    // unsigned long long*   __restrict__    forceBuffers, 
                 &dedq.getDevicePointer(),             // const real*           __restrict__    dedq,
