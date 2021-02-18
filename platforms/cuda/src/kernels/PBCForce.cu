@@ -236,8 +236,8 @@ extern "C" __global__ void computeNonbonded(
             localData[threadIdx.x].fy = 0.0f;
             localData[threadIdx.x].fz = 0.0f;
             localData[threadIdx.x].q = shflPosq.w;
-            localData[threadIdx.x].sig = parameters[atomIndex[j]*2+1];
-            localData[threadIdx.x].eps = parameters[atomIndex[j]*2+2];
+            localData[threadIdx.x].sig = parameters[atomIndex[j]*3+1];
+            localData[threadIdx.x].eps = parameters[atomIndex[j]*3+2];
             localData[threadIdx.x].dedq = 0;
 
             
