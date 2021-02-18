@@ -15,10 +15,8 @@ extern "C" __global__ void calcRealCharge(
     real*             __restrict__  dqdx_val,
     const real4*      __restrict__  posq,
 #ifdef USE_PBC
-    const int*        __restrict__  fbond_idx,
-    const real*       __restrict__  fbond_params,
-    const int*        __restrict__  fangle_idx,
-    const real*       __restrict__  fangle_params,
+    const int*        __restrict__  cf_idx,
+    const real*       __restrict__  cf_params,
     const int*        __restrict__  indexAtom,
     real4                           periodicBoxSize, 
     real4                           invPeriodicBoxSize, 
@@ -26,19 +24,17 @@ extern "C" __global__ void calcRealCharge(
     real4                           periodicBoxVecY, 
     real4                           periodicBoxVecZ
 #else
-    const int*        __restrict__  fbond_idx,
-    const real*       __restrict__  fbond_params,
-    const int*        __restrict__  fangle_idx,
-    const real*       __restrict__  fangle_params
+    const int*        __restrict__  cf_idx,
+    const real*       __restrict__  cf_params
 #endif
 ){
     for (int npair = blockIdx.x*blockDim.x+threadIdx.x; npair < NUM_FLUX_BONDS + NUM_FLUX_ANGLES; npair += blockDim.x*gridDim.x){
         if (npair < NUM_FLUX_BONDS){
             // bond
-            int idx1 = fbond_idx[npair*2];
-            int idx2 = fbond_idx[npair*2+1];
-            real k = fbond_params[npair*2];
-            real b = fbond_params[npair*2+1];
+            int idx1 = cf_idx[npair*2];
+            int idx2 = cf_idx[npair*2+1];
+            real k = cf_params[npair*2];
+            real b = cf_params[npair*2+1];
 #ifdef USE_PBC
             real4 posq1 = posq[indexAtom[idx1]];
             real4 posq2 = posq[indexAtom[idx2]];
@@ -77,21 +73,21 @@ extern "C" __global__ void calcRealCharge(
         } else {
             // angle
             int pidx = npair - NUM_FLUX_BONDS;
-            int idx1 = fangle_idx[pidx*3];
-            int idx2 = fangle_idx[pidx*3+1];
-            int idx3 = fangle_idx[pidx*3+2];
-            real k = fangle_params[pidx*2];
-            real theta = fangle_params[pidx*2+1];
+            int idx1 = cf_idx[PSHIFT2+pidx*3];
+            int idx2 = cf_idx[PSHIFT2+pidx*3+1];
+            int idx3 = cf_idx[PSHIFT2+pidx*3+2];
+            real k = cf_params[PSHIFT2+pidx*2];
+            real theta = cf_params[PSHIFT2+pidx*2+1];
 #ifdef USE_PBC
             real4 posq1 = posq[indexAtom[idx1]];
             real4 posq2 = posq[indexAtom[idx2]];
             real4 posq3 = posq[indexAtom[idx3]];
             real3 d21 = make_real3(posq1.x-posq2.x, posq1.y-posq2.y, posq1.z-posq2.z);
-            APPLY_PERIODIC_TO_DELTA(d21)
+            // APPLY_PERIODIC_TO_DELTA(d21)
             real3 d23 = make_real3(posq3.x-posq2.x, posq3.y-posq2.y, posq3.z-posq2.z);
-            APPLY_PERIODIC_TO_DELTA(d23)
+            // APPLY_PERIODIC_TO_DELTA(d23)
             real3 d13 = make_real3(posq3.x-posq1.x, posq3.y-posq1.y, posq3.z-posq1.z);
-            APPLY_PERIODIC_TO_DELTA(d13)
+            // APPLY_PERIODIC_TO_DELTA(d13)
 #else
             real4 posq1 = posq[idx1];
             real4 posq2 = posq[idx2];
@@ -120,19 +116,19 @@ extern "C" __global__ void calcRealCharge(
             atomicAdd(&realcharges[idx3], dq);
             atomicAdd(&realcharges[idx2], -2 * dq);
 
-            int pair1 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx);
-            int pair2 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx + 1);
-            int pair3 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx + 2);
-            int pair4 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx + 3);
-            int pair5 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx + 4);
-            int pair6 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx + 5);
-            int pair7 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx + 6);
-            int pair8 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx + 7);
-            int pair9 = 3 * (4 * NUM_FLUX_BONDS + 9 * pidx + 8);
-            real one_const = RSQRT(1 - cost*cost);
-            real fin_const1 = k * invR21 * invR23 * one_const;
-            real fin_const2_r21 = k * cost * one_const * invR21 * invR21;
-            real fin_const2_r23 = k * cost * one_const * invR23 * invR23;
+            int pair1 = 3 * (PSHIFT4 + 9 * pidx);
+            int pair2 = 3 * (PSHIFT4 + 9 * pidx + 1);
+            int pair3 = 3 * (PSHIFT4 + 9 * pidx + 2);
+            int pair4 = 3 * (PSHIFT4 + 9 * pidx + 3);
+            int pair5 = 3 * (PSHIFT4 + 9 * pidx + 4);
+            int pair6 = 3 * (PSHIFT4 + 9 * pidx + 5);
+            int pair7 = 3 * (PSHIFT4 + 9 * pidx + 6);
+            int pair8 = 3 * (PSHIFT4 + 9 * pidx + 7);
+            int pair9 = 3 * (PSHIFT4 + 9 * pidx + 8);
+            real one_const = k * RSQRT(1 - cost*cost);
+            real fin_const1 = invR21 * invR23 * one_const;
+            real fin_const2_r21 = cost * one_const * invR21 * invR21;
+            real fin_const2_r23 = cost * one_const * invR23 * invR23;
 
             real3 v1 = - fin_const1 * d23 + fin_const2_r21 * d21;
             real3 v3 = - fin_const1 * d21 + fin_const2_r23 * d23;

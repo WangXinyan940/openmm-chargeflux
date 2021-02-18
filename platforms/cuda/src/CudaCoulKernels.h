@@ -43,8 +43,8 @@ private:
     OpenMM::CudaArray expairidx0, expairidx1;
     OpenMM::CudaArray cosSinSums;
     OpenMM::CudaArray indexAtom;
-    OpenMM::CudaArray fbond_idx, fangle_idx;
-    OpenMM::CudaArray fbond_params, fangle_params;
+    OpenMM::CudaArray cf_idx;
+    OpenMM::CudaArray cf_params;
     OpenMM::CudaContext& cu;
     OpenMM::CudaArray dedq;
     OpenMM::CudaArray dqdx_dqidx;

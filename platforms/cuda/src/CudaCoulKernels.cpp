@@ -142,8 +142,8 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         realcharges_cu.initialize(cu, numParticles, elementSize, "realcharges");
         realcharges_cu.upload(realc);
 
-        vector<int> fbidx, faidx;
-        vector<float> fbprms, faprms;
+        vector<int> cfidx;
+        vector<float> cfprms;
         numFluxBonds = force.getNumFluxBonds();
         numFluxAngles = force.getNumFluxAngles();
 
@@ -152,15 +152,11 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
                 int idx1, idx2;
                 double k, b;
                 force.getFluxBondParameters(ii, idx1, idx2, k, b);
-                fbidx.push_back(idx1);
-                fbidx.push_back(idx2);
-                fbprms.push_back(k);
-                fbprms.push_back(b);
+                cfidx.push_back(idx1);
+                cfidx.push_back(idx2);
+                cfprms.push_back(k);
+                cfprms.push_back(b);
             }
-            fbond_idx.initialize(cu, numFluxBonds*2, sizeof(int), "fbondidx");
-            fbond_idx.upload(fbidx);
-            fbond_params.initialize(cu, numFluxBonds*2, elementSize, "fbondprms");
-            fbond_params.upload(fbprms);
         }
 
         if (numFluxAngles > 0){
@@ -168,17 +164,17 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
                 int idx1, idx2, idx3;
                 double k, theta;
                 force.getFluxAngleParameters(ii, idx1, idx2, idx3, k, theta);
-                faidx.push_back(idx1);
-                faidx.push_back(idx2);
-                faidx.push_back(idx3);
-                faprms.push_back(k);
-                faprms.push_back(theta);
+                cfidx.push_back(idx1);
+                cfidx.push_back(idx2);
+                cfidx.push_back(idx3);
+                cfprms.push_back(k);
+                cfprms.push_back(theta);
             }
-            fangle_idx.initialize(cu, numFluxAngles*3, sizeof(int), "fangleidx");
-            fangle_idx.upload(faidx);
-            fangle_params.initialize(cu, numFluxAngles*2, elementSize, "fangleprms");
-            fangle_params.upload(faprms);
         }
+        cf_idx.initialize(cu, cfidx.size(), sizeof(int), "cfidx");
+        cf_idx.upload(faidx);
+        cf_params.initialize(cu, cfprms.size(), elementSize, "cfparams");
+        cf_params.upload(faprms);
     }
 
     if (numFluxAngles + numFluxBonds > 0){
@@ -306,6 +302,8 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
     }
     defRealCharges["NUM_FLUX_BONDS"] = cu.intToString(numFluxBonds);
     defRealCharges["NUM_FLUX_ANGLES"] = cu.intToString(numFluxAngles);
+    defRealCharges["PSHIFT2"] = cu.intToString(numFluxBonds*2);
+    defRealCharges["PSHIFT4"] = cu.intToString(numFluxBonds*4);
     defRealCharges["NUM_ATOMS"] = cu.intToString(numParticles);
     defRealCharges["NUM_DQDX_PAIRS"] = cu.intToString(numFluxBonds * 4 + numFluxAngles * 9);
     defRealCharges["PADDED_NUM_ATOMS"] = cu.intToString(cu.getPaddedNumAtoms());
@@ -457,10 +455,8 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 &realcharges_cu.getDevicePointer(),
                 &dqdx_val.getDevicePointer(),
                 &cu.getPosq().getDevicePointer(),
-                &fbond_idx.getDevicePointer(),
-                &fbond_params.getDevicePointer(),
-                &fangle_idx.getDevicePointer(),
-                &fangle_params.getDevicePointer(),
+                &cf_idx.getDevicePointer(),
+                &cf_params.getDevicePointer(),
                 &indexAtom.getDevicePointer(),
                 cu.getPeriodicBoxSizePointer(),      
                 cu.getInvPeriodicBoxSizePointer(),   
