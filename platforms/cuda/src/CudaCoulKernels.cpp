@@ -121,10 +121,12 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
                 cfprms.push_back(theta);
             }
         }
-        cf_idx.initialize(cu, cfidx.size(), sizeof(int), "cfidx");
-        cf_idx.upload(cfidx);
-        cf_params.initialize(cu, cfidx.size(), elementSize, "cfparams");
-        cf_params.upload(cfprms);
+        if (numFluxBonds + numFluxAngles > 0){
+            cf_idx.initialize(cu, cfidx.size(), sizeof(int), "cfidx");
+            cf_idx.upload(cfidx);
+            cf_params.initialize(cu, cfprms.size(), elementSize, "cfparams");
+            cf_params.upload(cfprms);
+        }
     } else {
         vector<float> parameters;
         vector<float> realc;
@@ -170,10 +172,12 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
                 cfprms.push_back(theta);
             }
         }
-        cf_idx.initialize(cu, cfidx.size(), sizeof(int), "cfidx");
-        cf_idx.upload(cfidx);
-        cf_params.initialize(cu, cfprms.size(), elementSize, "cfparams");
-        cf_params.upload(cfprms);
+        if (numFluxBonds + numFluxAngles > 0){
+            cf_idx.initialize(cu, cfidx.size(), sizeof(int), "cfidx");
+            cf_idx.upload(cfidx);
+            cf_params.initialize(cu, cfprms.size(), elementSize, "cfparams");
+            cf_params.upload(cfprms);
+        }
     }
 
     if (numFluxAngles + numFluxBonds > 0){
