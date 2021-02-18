@@ -781,7 +781,7 @@ extern "C" __global__ void computeExclusion(
             real ener2 = epssig6 * (sig6 - 1);
 
             printf("Ener: %f %f\n", ener1, ener2);
-            atomicAdd(%energyBuffer[npair], -ener1 - ener2);
+            atomicAdd(&energyBuffer[npair], -ener1 - ener2);
             real dEdR = - ONE_4PI_EPS0 * c1c2 * invR - epssig6 * (12*sig6 - 6);
             // energyBuffer[npair] -= ONE_4PI_EPS0 * c1c2 * invR;
             // real dEdR = - ONE_4PI_EPS0 * c1c2 * invR;
