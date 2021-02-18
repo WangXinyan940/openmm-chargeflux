@@ -91,8 +91,8 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         realcharges_cu.initialize(cu, numParticles, elementSize, "realcharges");
         realcharges_cu.upload(realc);
 
-        vector<int> fbidx, faidx;
-        vector<double> fbprms, faprms;
+        vector<int> cfidx;
+        vector<double> cfprms;
         numFluxBonds = force.getNumFluxBonds();
         numFluxAngles = force.getNumFluxAngles();
         if (numFluxBonds > 0){
@@ -100,15 +100,11 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
                 int idx1, idx2;
                 double k, b;
                 force.getFluxBondParameters(ii, idx1, idx2, k, b);
-                fbidx.push_back(idx1);
-                fbidx.push_back(idx2);
-                fbprms.push_back(k);
-                fbprms.push_back(b);
+                cfidx.push_back(idx1);
+                cfidx.push_back(idx2);
+                cfprms.push_back(k);
+                cfprms.push_back(b);
             }
-            fbond_idx.initialize(cu, numFluxBonds*2, sizeof(int), "fbondidx");
-            fbond_idx.upload(fbidx);
-            fbond_params.initialize(cu, numFluxBonds*2, elementSize, "fbondprms");
-            fbond_params.upload(fbprms);
         }
 
         if (numFluxAngles > 0){
@@ -116,18 +112,17 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
                 int idx1, idx2, idx3;
                 double k, theta;
                 force.getFluxAngleParameters(ii, idx1, idx2, idx3, k, theta);
-                faidx.push_back(idx1);
-                faidx.push_back(idx2);
-                faidx.push_back(idx3);
-                faprms.push_back(k);
-                faprms.push_back(theta);
+                cfidx.push_back(idx1);
+                cfidx.push_back(idx2);
+                cfidx.push_back(idx3);
+                cfprms.push_back(k);
+                cfprms.push_back(theta);
             }
-            fangle_idx.initialize(cu, numFluxAngles*3, sizeof(int), "fangleidx");
-            fangle_idx.upload(faidx);
-            fangle_params.initialize(cu, numFluxAngles*2, elementSize, "fangleprms");
-            fangle_params.upload(faprms);
         }
-
+        cf_idx.initialize(cu, cfidx.size(), sizeof(int), "cfidx");
+        cf_idx.upload(cfidx);
+        cf_params.initialize(cu, cfidx.size(), elementSize, "cfparams");
+        cf_params.upload(cfprms);
     } else {
         vector<float> parameters;
         vector<float> realc;
