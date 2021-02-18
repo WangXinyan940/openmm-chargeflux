@@ -1,9 +1,11 @@
 extern "C" __global__ void copyCharge(
     real4*            __restrict__  posq,
     real*             __restrict__  dedq,
-    const real*       __restrict__  parameters,
 #ifdef USE_PBC
+    const real*       __restrict__  parameters,
     const int*        __restrict__  indexAtom
+#else
+    const real*       __restrict__  parameters
 #endif
 ){
     for (int natom = blockIdx.x*blockDim.x+threadIdx.x; natom < NUM_ATOMS; natom += blockDim.x*gridDim.x){
@@ -14,7 +16,7 @@ extern "C" __global__ void copyCharge(
         atomicAdd(&posq[natom].w,parameters[natom*3]);
         printf("%f %f\n", posq[natom].w, parameters[natom*3]);
 #endif
-        dedq[natom] = 0
+        dedq[natom] = 0;
     }
 }
 
