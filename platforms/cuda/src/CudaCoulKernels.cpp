@@ -68,12 +68,12 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
     for(int ii=0;ii<numParticles;ii++){
         exclusions[ii].push_back(ii);
     }
-    for(int ii=0;ii<force.getNumExceptions();ii++){
-        int p1, p2;
-        force.getExceptionParameters(ii, p1, p2);
-        exclusions[p1].push_back(p2);
-        exclusions[p2].push_back(p1);
-    }
+    // for(int ii=0;ii<force.getNumExceptions();ii++){
+    //     int p1, p2;
+    //     force.getExceptionParameters(ii, p1, p2);
+    //     exclusions[p1].push_back(p2);
+    //     exclusions[p2].push_back(p1);
+    // }
 
     // Inititalize CUDA objects.
     // if noPBC
