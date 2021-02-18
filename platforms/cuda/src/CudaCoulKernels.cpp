@@ -93,6 +93,8 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
 
         vector<int> cfidx;
         vector<double> cfprms;
+        cfidx.resize(0);
+        cfprms.resize(0);
         numFluxBonds = force.getNumFluxBonds();
         numFluxAngles = force.getNumFluxAngles();
         if (numFluxBonds > 0){
@@ -139,6 +141,8 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
 
         vector<int> cfidx;
         vector<float> cfprms;
+        cfidx.resize(0);
+        cfprms.resize(0);
         numFluxBonds = force.getNumFluxBonds();
         numFluxAngles = force.getNumFluxAngles();
 
