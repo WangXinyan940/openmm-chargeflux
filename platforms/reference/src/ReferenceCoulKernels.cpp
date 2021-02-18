@@ -324,7 +324,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                 double sig2 = inverseR * sig;
                 sig2 *= sig2;
                 double sig6 = sig2*sig2*sig2;
-                double eps = ljparams[2*ii+1] + ljparams[2*jj+1];
+                double eps = ljparams[2*ii+1] * ljparams[2*jj+1];
                 double epssig6 = sig6*eps;
                 if (includeEnergy) {
                     energy += ONE_4PI_EPS0*realcharges[ii]*realcharges[jj]*inverseR;
@@ -352,7 +352,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                     double sig2 = inverseR * sig;
                     sig2 *= sig2;
                     double sig6 = sig2*sig2*sig2;
-                    double eps = ljparams[2*p1+1] + ljparams[2*p2+1];
+                    double eps = ljparams[2*p1+1] * ljparams[2*p2+1];
                     double epssig6 = sig6*eps;
                     if (includeEnergy) {
                         energy -= ONE_4PI_EPS0*realcharges[p1]*realcharges[p2]*inverseR;
@@ -454,7 +454,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
             double sig2 = inverseR * sig;
             sig2 *= sig2;
             double sig6 = sig2*sig2*sig2;
-            double eps = ljparams[2*ii+1] + ljparams[2*jj+1];
+            double eps = ljparams[2*ii+1] * ljparams[2*jj+1];
             double epssig6 = sig6*eps;
 
             if(includeForces){
@@ -489,7 +489,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                     double sig2 = inverseR * sig;
                     sig2 *= sig2;
                     double sig6 = sig2*sig2*sig2;
-                    double eps = ljparams[2*p1+1] + ljparams[2*p2+1];
+                    double eps = ljparams[2*p1+1] * ljparams[2*p2+1];
                     double epssig6 = sig6*eps;
 
                     if(includeForces){
