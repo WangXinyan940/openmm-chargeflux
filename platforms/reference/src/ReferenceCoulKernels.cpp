@@ -450,7 +450,6 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
             double inverseR  = 1.0/(deltaR[0][ReferenceForce::RIndex]);
             double alphaR = alpha * r;
 
-            cout << ljparams[2*ii] << " " << ljparams[2*ii+1] << " | " << ljparams[2*jj] << " " << ljparams[2*jj+1] << endl;
             double sig = ljparams[2*ii] + ljparams[2*jj];
             double sig2 = inverseR * sig;
             sig2 *= sig2;
