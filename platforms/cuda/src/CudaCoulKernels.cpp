@@ -576,10 +576,8 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 &realcharges_cu.getDevicePointer(),
                 &dqdx_val.getDevicePointer(),
                 &cu.getPosq().getDevicePointer(),
-                &fbond_idx.getDevicePointer(),
-                &fbond_params.getDevicePointer(),
-                &fangle_idx.getDevicePointer(),
-                &fangle_params.getDevicePointer()
+                &cf_idx.getDevicePointer(),
+                &cf_params.getDevicePointer(),
             };
             cu.executeKernel(calcRealChargeKernel, args_realc, numFluxBonds + numFluxAngles);
         }
