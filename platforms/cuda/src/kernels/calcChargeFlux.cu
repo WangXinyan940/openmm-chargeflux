@@ -126,12 +126,12 @@ extern "C" __global__ void calcRealCharge(
             real dq = k * (angle - theta);
 #ifdef USE_PBC
             atomicAdd(&posq[indexAtom[idx1]].w, dq);
-            atomicAdd(&posq[indexAtom[idx2]].w, dq);
-            atomicAdd(&posq[indexAtom[idx3]].w, -2 * dq);
+            atomicAdd(&posq[indexAtom[idx3]].w, dq);
+            atomicAdd(&posq[indexAtom[idx2]].w, -2 * dq);
 #else
             atomicAdd(&posq[idx1].w, dq);
-            atomicAdd(&posq[idx2].w, dq);
-            atomicAdd(&posq[idx3].w, -2 * dq);
+            atomicAdd(&posq[idx3].w, dq);
+            atomicAdd(&posq[idx2].w, -2 * dq);
 #endif
 
             int pair1 = 3 * (PSHIFT4 + 9 * pidx);
