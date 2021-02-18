@@ -453,6 +453,8 @@ extern "C" __global__ void computeNonbonded(
                 localData[threadIdx.x].z = 0;
 
                 localData[threadIdx.x].q = 0.0;
+                localData[threadIdx.x].sig = 0.0;
+                localData[threadIdx.x].eps = 0.0;
                 localData[threadIdx.x].dedq = 0;
             }
 #ifdef USE_PERIODIC
