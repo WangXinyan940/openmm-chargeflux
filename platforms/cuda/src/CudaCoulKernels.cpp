@@ -24,8 +24,8 @@ public:
 	}
     bool areParticlesIdentical(int particle1, int particle2) {
         double c1, c2, s1, s2, e1, e2;
-        force.getParticleCharge(particle1, c1, s1, e1);
-        force.getParticleCharge(particle2, c2, s2, e2);
+        force.getParticleParameters(particle1, c1, s1, e1);
+        force.getParticleParameters(particle2, c2, s2, e2);
         return (c1 == c2) && (s1 == s2) && (e1 == e2);
     }
 	int getNumParticleGroups() {
