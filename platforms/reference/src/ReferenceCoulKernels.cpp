@@ -450,6 +450,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
             double inverseR  = 1.0/(deltaR[0][ReferenceForce::RIndex]);
             double alphaR = alpha * r;
 
+            cout << ljparams[2*ii] << " " << ljparams[2*ii+1] << " | " << ljparams[2*jj] << " " << ljparams[2*jj+1] << endl;
             double sig = ljparams[2*ii] + ljparams[2*jj];
             double sig2 = inverseR * sig;
             sig2 *= sig2;
@@ -485,17 +486,9 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                     double inverseR  = 1.0/(deltaR[0][ReferenceForce::RIndex]);
                     double alphaR = alpha * r;
 
-                    double sig = ljparams[2*p1] + ljparams[2*p2];
-                    double sig2 = inverseR * sig;
-                    sig2 *= sig2;
-                    double sig6 = sig2*sig2*sig2;
-                    double eps = ljparams[2*p1+1] * ljparams[2*p2+1];
-                    double epssig6 = sig6*eps;
-
                     if(includeForces){
                         double dEdR = ONE_4PI_EPS0 * realcharges[p1] * realcharges[p2] * inverseR * inverseR * inverseR;
                         dEdR = dEdR * (erf(alphaR) - alphaR * exp (- alphaR * alphaR) * 2.0 / sqrt(M_PI));
-                        dEdR += epssig6*(12*sig6 - 6) * inverseR * inverseR;
                         for(int kk=0;kk<3;kk++){
                             double fconst = dEdR*deltaR[0][kk];
                             forces[p1][kk] -= fconst;
@@ -505,7 +498,7 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                     dedq[p2] -= ONE_4PI_EPS0*realcharges[p1]*inverseR*erf(alphaR);
                     }
 
-                    realSpaceException -= ONE_4PI_EPS0*realcharges[p1]*realcharges[p2]*inverseR*erf(alphaR) + epssig6 * (sig6 - 1);
+                    realSpaceException -= ONE_4PI_EPS0*realcharges[p1]*realcharges[p2]*inverseR*erf(alphaR);
                 }
             }
         }
