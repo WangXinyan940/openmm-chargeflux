@@ -9,12 +9,12 @@ extern "C" __global__ void copyCharge(
     for (int natom = blockIdx.x*blockDim.x+threadIdx.x; natom < NUM_ATOMS; natom += blockDim.x*gridDim.x){
 #ifdef USE_PBC
         atomicAdd(&posq[indexAtom[natom]].w,parameters[natom*3]);
-        print("%f %f\n", posq[indexAtom[natom]].w, parameters[natom*3]);
+        printf("%f %f\n", posq[indexAtom[natom]].w, parameters[natom*3]);
 #else
         atomicAdd(&posq[natom].w,parameters[natom*3]);
         printf("%f %f\n", posq[natom].w, parameters[natom*3]);
 #endif
-        dedq[natom] = 0;
+        dedq[natom] = 0
     }
 }
 
