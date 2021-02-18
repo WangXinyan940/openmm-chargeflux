@@ -39,6 +39,7 @@ public:
 private:
     double cutoff;
     std::vector<double> charges;
+    std::vector<double> ljparams;
     std::vector<std::set<int>> exclusions;
     double ewaldTol, alpha, one_alpha2;
     bool ifPBC;
