@@ -776,8 +776,10 @@ extern "C" __global__ void computeExclusion(
             sig2 *= sig2;
             real sig6 = sig2 * sig2 * sig2;
             real epssig6 = parameters[p1*3+2] * parameters[p2*3+2] * sig6;
+            real ener = epssig6 * (sig6 - 1);
 
-            energyBuffer[npair] -= ONE_4PI_EPS0 * c1c2 * invR + epssig6 * (sig6 - 1);
+            printf("Ener: %f\n", ener);
+            energyBuffer[npair] -= ONE_4PI_EPS0 * c1c2 * invR + ener;
             real dEdR = - ONE_4PI_EPS0 * c1c2 * invR - epssig6 * (12*sig6 - 6);
             // energyBuffer[npair] -= ONE_4PI_EPS0 * c1c2 * invR;
             // real dEdR = - ONE_4PI_EPS0 * c1c2 * invR;
