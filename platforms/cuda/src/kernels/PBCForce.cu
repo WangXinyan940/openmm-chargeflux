@@ -550,7 +550,7 @@ extern "C" __global__ void computeNonbonded(
 #ifdef USE_EXCLUSIONS
                     bool isExcluded = (atom1 >= NUM_ATOMS || atom2 >= NUM_ATOMS);
 #else
-                    bool isExcluded = false;
+                    bool isExcluded = (atom1 >= NUM_ATOMS || atom2 >= NUM_ATOMS);
 #endif
                     real tempEnergy = 0.0f;
                     const real interactionScale = 1.0f;
