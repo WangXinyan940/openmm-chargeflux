@@ -1,17 +1,15 @@
 #define WARPS_PER_GROUP (THREAD_BLOCK_SIZE/TILE_SIZE)
 
 #define COMPUTE_INTERACTION \
-tempEnergy += ONE_4PI_EPS0 * atomData1.chrg * atomData2.chrg * invR * erfcAlphaR;\
-dEdR += ONE_4PI_EPS0 * atomData1.chrg * atomData2.chrg * invR * invR * invR;\
+tempEnergy += ONE_4PI_EPS0 * atomData1.q * atomData2.q * invR * erfcAlphaR;\
+dEdR += ONE_4PI_EPS0 * atomData1.q * atomData2.q * invR * invR * invR;\
 dEdR = dEdR * (erfcAlphaR  + alphaR * EXP(- alphaR * alphaR) * TWO_OVER_SQRT_PI)
 
 typedef struct {
     real x, y, z, q;
-    real chrg;
     real fx, fy, fz;
     real dedq;
     real sig, eps;
-    real empty;
 } AtomData;
 
 
@@ -82,8 +80,8 @@ extern "C" __global__ void computeNonbonded(
         mixed*                    __restrict__     energyBuffer, 
         real*                     __restrict__     dedq,
         const real4*              __restrict__     posq, 
-        const real*               __restrict__     charges,
         const int*                __restrict__     atomIndex,
+        const real*               __restrict__     parameters,
         const tileflags*          __restrict__     exclusions,
         const int2*               __restrict__     exclusionTiles, 
         unsigned int                               startTileIndex, 
@@ -130,7 +128,7 @@ extern "C" __global__ void computeNonbonded(
         atomData1.x = posq1.x;
         atomData1.y = posq1.y;
         atomData1.z = posq1.z;
-        atomData1.chrg = charges[atomIndex[atom1]];
+        atomData1.q = posq1.w;
         atomData1.dedq = 0;
 
 #ifdef USE_EXCLUSIONS
@@ -142,16 +140,16 @@ extern "C" __global__ void computeNonbonded(
             localData[threadIdx.x].x = posq1.x;
             localData[threadIdx.x].y = posq1.y;
             localData[threadIdx.x].z = posq1.z;
-            localData[threadIdx.x].chrg = charges[atomIndex[atom1]];
+            localData[threadIdx.x].q = posq1.w;
             localData[threadIdx.x].dedq = 0;
 
             // we do not need to fetch parameters from global since this is a symmetric tile
             // instead we can broadcast the values using shuffle
             for (unsigned int j = 0; j < TILE_SIZE; j++) {
                 int atom2 = tbx+j;
-                real3 posq2;
+                real4 posq2;
 
-                posq2 = make_real3(localData[atom2].x, localData[atom2].y, localData[atom2].z);
+                posq2 = make_real4(localData[atom2].x, localData[atom2].y, localData[atom2].z, localData[atom2].w);
                 real3 delta = make_real3(posq2.x-posq1.x, posq2.y-posq1.y, posq2.z-posq1.z);
 #ifdef USE_PERIODIC
                 APPLY_PERIODIC_TO_DELTA(delta)
@@ -165,7 +163,7 @@ extern "C" __global__ void computeNonbonded(
                 atomData2.x = posq2.x;
                 atomData2.y = posq2.y;
                 atomData2.z = posq2.z;
-                atomData2.chrg = localData[atom2].chrg;
+                atomData2.q = posq2.w;
 
                 atom2 = y*TILE_SIZE+j;
 #ifdef USE_SYMMETRIC
@@ -190,7 +188,7 @@ extern "C" __global__ void computeNonbonded(
                     const real erfcAlphaR = (0.254829592f+(-0.284496736f+(1.421413741f+(-1.453152027f+1.061405429f*t)*t)*t)*t)*t*expAlphaRSqr;
 #endif
                     COMPUTE_INTERACTION;
-                    dedqv += ONE_4PI_EPS0 * atomData2.chrg * invR * erfcAlphaR;
+                    dedqv += ONE_4PI_EPS0 * atomData2.q * invR * erfcAlphaR;
                 }
                 energy += 0.5f*tempEnergy;
 #ifdef INCLUDE_FORCES
@@ -222,7 +220,7 @@ extern "C" __global__ void computeNonbonded(
             localData[threadIdx.x].fx = 0.0f;
             localData[threadIdx.x].fy = 0.0f;
             localData[threadIdx.x].fz = 0.0f;
-            localData[threadIdx.x].chrg = charges[atomIndex[j]];
+            localData[threadIdx.x].q = shflPosq.w;
             localData[threadIdx.x].dedq = 0;
 
             
@@ -234,7 +232,7 @@ extern "C" __global__ void computeNonbonded(
             for (j = 0; j < TILE_SIZE; j++) {
                 int atom2 = tbx+tj;
 
-                real3 posq2 = make_real3(localData[atom2].x, localData[atom2].y, localData[atom2].z);
+                real4 posq2 = make_real3(localData[atom2].x, localData[atom2].y, localData[atom2].z, localData[atom2].w);
 
                 real3 delta = make_real3(posq2.x-posq1.x, posq2.y-posq1.y, posq2.z-posq1.z);
 #ifdef USE_PERIODIC
@@ -249,7 +247,7 @@ extern "C" __global__ void computeNonbonded(
                 atomData2.x = posq2.x;
                 atomData2.y = posq2.y;
                 atomData2.z = posq2.z;
-                atomData2.chrg = localData[atom2].chrg;
+                atomData2.q = posq2.w;
 
                 atom2 = y*TILE_SIZE+tj;
 #ifdef USE_SYMMETRIC
@@ -276,8 +274,8 @@ extern "C" __global__ void computeNonbonded(
                     const real erfcAlphaR = (0.254829592f+(-0.284496736f+(1.421413741f+(-1.453152027f+1.061405429f*t)*t)*t)*t)*t*expAlphaRSqr;
 #endif
                     COMPUTE_INTERACTION;
-                    dedqv += ONE_4PI_EPS0 * atomData2.chrg * invR * erfcAlphaR;
-                    localData[tbx+tj].dedq += ONE_4PI_EPS0 * atomData1.chrg * invR * erfcAlphaR;
+                    dedqv += ONE_4PI_EPS0 * atomData2.q * invR * erfcAlphaR;
+                    localData[tbx+tj].dedq += ONE_4PI_EPS0 * atomData1.q * invR * erfcAlphaR;
                 }
                 energy += tempEnergy;
 #ifdef INCLUDE_FORCES
@@ -403,7 +401,7 @@ extern "C" __global__ void computeNonbonded(
             atomData1.x = posq1.x;
             atomData1.y = posq1.y;
             atomData1.z = posq1.z;
-            atomData1.chrg = charges[atomIndex[atom1]];
+            atomData1.q = posq1.w;
 
             //const unsigned int localAtomIndex = threadIdx.x;
 #ifdef USE_CUTOFF
@@ -422,7 +420,7 @@ extern "C" __global__ void computeNonbonded(
                 localData[threadIdx.x].fx = 0.0f;
                 localData[threadIdx.x].fy = 0.0f;
                 localData[threadIdx.x].fz = 0.0f;
-                localData[threadIdx.x].chrg = charges[atomIndex[j]];
+                localData[threadIdx.x].q = posq[j].w;
                 localData[threadIdx.x].dedq = 0;
                 
             }
@@ -432,7 +430,7 @@ extern "C" __global__ void computeNonbonded(
                 localData[threadIdx.x].y = 0;
                 localData[threadIdx.x].z = 0;
 
-                localData[threadIdx.x].chrg = 0.0;
+                localData[threadIdx.x].q = 0.0;
                 localData[threadIdx.x].dedq = 0;
             }
 #ifdef USE_PERIODIC
@@ -448,7 +446,7 @@ extern "C" __global__ void computeNonbonded(
                 for (j = 0; j < TILE_SIZE; j++) {
                     int atom2 = tbx+tj;
 
-                    real3 posq2 = make_real3(localData[atom2].x, localData[atom2].y, localData[atom2].z);
+                    real4 posq2 = make_real3(localData[atom2].x, localData[atom2].y, localData[atom2].z, localData[atom2].w);
 
                     real3 delta = make_real3(posq2.x-posq1.x, posq2.y-posq1.y, posq2.z-posq1.z);
                     real r2 = delta.x*delta.x + delta.y*delta.y + delta.z*delta.z;
@@ -460,7 +458,7 @@ extern "C" __global__ void computeNonbonded(
                     atomData2.x = posq2.x;
                     atomData2.y = posq2.y;
                     atomData2.z = posq2.z;
-                    atomData2.chrg = localData[atom2].chrg;
+                    atomData2.q = posq2.w;
 
                     atom2 = atomIndices[tbx+tj];
 #ifdef USE_SYMMETRIC
@@ -486,8 +484,8 @@ extern "C" __global__ void computeNonbonded(
                         const real erfcAlphaR = (0.254829592f+(-0.284496736f+(1.421413741f+(-1.453152027f+1.061405429f*t)*t)*t)*t)*t*expAlphaRSqr;
 #endif
                         COMPUTE_INTERACTION;
-                        dedqv +=  ONE_4PI_EPS0 * atomData2.chrg * invR * erfcAlphaR;
-                        localData[tbx+tj].dedq +=  ONE_4PI_EPS0 * atomData1.chrg * invR * erfcAlphaR;
+                        dedqv +=  ONE_4PI_EPS0 * atomData2.q * invR * erfcAlphaR;
+                        localData[tbx+tj].dedq +=  ONE_4PI_EPS0 * atomData1.q * invR * erfcAlphaR;
                     }
                     
                     energy += tempEnergy;
@@ -525,7 +523,7 @@ extern "C" __global__ void computeNonbonded(
                 for (j = 0; j < TILE_SIZE; j++) {
                     int atom2 = tbx+tj;
 
-                    real3 posq2 = make_real3(localData[atom2].x, localData[atom2].y, localData[atom2].z);
+                    real4 posq2 = make_real3(localData[atom2].x, localData[atom2].y, localData[atom2].z, localData[atom2].w);
                     real3 delta = make_real3(posq2.x-posq1.x, posq2.y-posq1.y, posq2.z-posq1.z);
 #ifdef USE_PERIODIC
                     APPLY_PERIODIC_TO_DELTA(delta)
@@ -539,7 +537,7 @@ extern "C" __global__ void computeNonbonded(
                     atomData2.x = posq2.x;
                     atomData2.y = posq2.y;
                     atomData2.z = posq2.z;
-                    atomData2.chrg = localData[atom2].chrg;
+                    atomData2.q = posq2.w;
 
                     atom2 = atomIndices[tbx+tj];
 #ifdef USE_SYMMETRIC
@@ -565,8 +563,8 @@ extern "C" __global__ void computeNonbonded(
                         const real erfcAlphaR = (0.254829592f+(-0.284496736f+(1.421413741f+(-1.453152027f+1.061405429f*t)*t)*t)*t)*t*expAlphaRSqr;
 #endif
                         COMPUTE_INTERACTION;
-                        dedqv +=  ONE_4PI_EPS0 * atomData2.chrg * invR * erfcAlphaR;
-                        localData[tbx+tj].dedq +=  ONE_4PI_EPS0 * atomData1.chrg * invR * erfcAlphaR;
+                        dedqv +=  ONE_4PI_EPS0 * atomData2.q * invR * erfcAlphaR;
+                        localData[tbx+tj].dedq +=  ONE_4PI_EPS0 * atomData1.q * invR * erfcAlphaR;
                     }
                     
                     energy += tempEnergy;
@@ -640,7 +638,7 @@ extern "C" __global__ void computeNonbonded(
         atomData1.x = posq1.x;
         atomData1.y = posq1.y;
         atomData1.z = posq1.z;
-        atomData1.chrg = charges[atomIndex[atom1]];
+        atomData1.q = posq1.w;
         
         int j = atom2;
         // atom2 = threadIdx.x;
@@ -650,7 +648,7 @@ extern "C" __global__ void computeNonbonded(
         atomData2.x = posq2.x;
         atomData2.y = posq2.y;
         atomData2.z = posq2.z;
-        atomData2.chrg = charges[atomIndex[atom2]];
+        atomData2.q = posq2.w;
         
         // atom2 = pair.y;
         real3 delta = make_real3(posq2.x-posq1.x, posq2.y-posq1.y, posq2.z-posq1.z);
@@ -683,8 +681,8 @@ extern "C" __global__ void computeNonbonded(
             const real erfcAlphaR = (0.254829592f+(-0.284496736f+(1.421413741f+(-1.453152027f+1.061405429f*t)*t)*t)*t)*t*expAlphaRSqr;
 #endif
             COMPUTE_INTERACTION;
-            dedq1 += ONE_4PI_EPS0 * atomData2.chrg * invR * erfcAlphaR;
-            dedq2 += ONE_4PI_EPS0 * atomData1.chrg * invR * erfcAlphaR;
+            dedq1 += ONE_4PI_EPS0 * atomData2.q * invR * erfcAlphaR;
+            dedq2 += ONE_4PI_EPS0 * atomData1.q * invR * erfcAlphaR;
         }
         
         energy += tempEnergy;
@@ -715,9 +713,9 @@ extern "C" __global__ void computeExclusion(
     mixed*                    __restrict__     energyBuffer, 
     real*                     __restrict__     dedq,
     const real4*              __restrict__     posq, 
-    const real*               __restrict__     charges,
     const int*                __restrict__     atomIndex,
     const int*                __restrict__     indexAtom,
+    const real*               __restrict__     parameters,
     const int*                __restrict__     exclusionidx1,
     const int*                __restrict__     exclusionidx2,
     const int                                  numExclusions,
@@ -732,11 +730,9 @@ extern "C" __global__ void computeExclusion(
         int p2 = exclusionidx2[npair];
         int atom1 = indexAtom[p1];
         int atom2 = indexAtom[p2];
-        real prm1 = charges[p1];
-        real prm2 = charges[p2];
-        real c1c2 = prm1 * prm2;
         real4 posq1 = posq[atom1];
         real4 posq2 = posq[atom2];
+        real c1c2 = posq1.w * posq2.w;
         real3 delta = make_real3(posq2.x - posq1.x, posq2.y - posq1.y, posq2.z - posq1.z);
         APPLY_PERIODIC_TO_DELTA(delta)
         
@@ -765,10 +761,9 @@ extern "C" __global__ void computeExclusion(
 
 extern "C" __global__ void genIndexAtom(
     const int*     __restrict__    atomIndex,
-    int*           __restrict__    indexAtom,
-    int                            numParticles
+    int*           __restrict__    indexAtom
 ){
-    for (int atom = blockIdx.x*blockDim.x+threadIdx.x; atom < numParticles; atom += blockDim.x*gridDim.x){
+    for (int atom = blockIdx.x*blockDim.x+threadIdx.x; atom < NUM_ATOMS; atom += blockDim.x*gridDim.x){
         int index = atomIndex[atom];
         indexAtom[index] = atom;
     }
@@ -777,20 +772,20 @@ extern "C" __global__ void genIndexAtom(
 extern "C" __global__ void computeEwaldSelfEner(
     mixed*                    __restrict__     energyBuffer, 
     real*                     __restrict__     dedq,
-    const real*               __restrict__     charges
+    const real4*              __restrict__     posq,
+    const int*                __restrict__     atomIndex
 ){
     for (int atom = blockIdx.x*blockDim.x+threadIdx.x; atom < NUM_ATOMS; atom += blockDim.x*gridDim.x){
-        real chrg = charges[atom];
+        real chrg = posq[atom].w;
         energyBuffer[blockIdx.x*blockDim.x+threadIdx.x] -= ONE_4PI_EPS0 * chrg * chrg * EWALD_ALPHA * ONE_OVER_SQRT_PI;
 
-        dedq[atom] += - 2 * ONE_4PI_EPS0 * EWALD_ALPHA * ONE_OVER_SQRT_PI * chrg;
+        dedq[atomIndex[atom]] += - 2 * ONE_4PI_EPS0 * EWALD_ALPHA * ONE_OVER_SQRT_PI * chrg;
     }
 }
 
 extern "C" __global__ void computeEwaldRecEner(
     mixed*                    __restrict__     energyBuffer, 
     const real4*              __restrict__     posq, 
-    const real*               __restrict__     charges,
     const int*                __restrict__     atomIndex,
     real*                     __restrict__     cosSinSums,
     real4                                      periodicBoxSize,
@@ -826,8 +821,8 @@ extern "C" __global__ void computeEwaldRecEner(
             real4 apos = posq[atom];
             real costmp = COS(apos.x*kx + apos.y*ky + apos.z*kz);
             real sintmp = SIN(apos.x*kx + apos.y*ky + apos.z*kz);
-            cossum += costmp * charges[atomIndex[atom]];
-            sinsum += sintmp * charges[atomIndex[atom]];
+            cossum += costmp * apos.w;
+            sinsum += sintmp * apos.w;
         }
         cosSinSums[2*index] = cossum;
         cosSinSums[2*index+1] = sinsum;
@@ -846,7 +841,6 @@ extern "C" __global__ void computeEwaldRecForce(
     unsigned long long*       __restrict__     forceBuffers, 
     real*                     __restrict__     dedq,
     const real4*              __restrict__     posq, 
-    const real*               __restrict__     charges,
     const int*                __restrict__     atomIndex,
     const real*               __restrict__     cosSinSums, 
     real4                                      periodicBoxSize,
@@ -881,7 +875,7 @@ extern "C" __global__ void computeEwaldRecForce(
                     real2 structureFactor = make_real2(COS(phase3), SIN(phase3));
                     real cossum = cosSinSums[index*2];
                     real sinsum = cosSinSums[index*2+1];
-                    real dEdR = 2*reciprocalCoefficient*ak*charges[atomIndex[atom]]*(cossum*structureFactor.y - sinsum*structureFactor.x);
+                    real dEdR = 2*reciprocalCoefficient*ak*apos.w*(cossum*structureFactor.y - sinsum*structureFactor.x);
                     force.x += dEdR*kx;
                     force.y += dEdR*ky;
                     force.z += dEdR*kz;

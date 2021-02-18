@@ -1,19 +1,18 @@
 extern "C" __global__ void copyCharge(
-    real*            __restrict__  realcharges,
-    real*            __restrict__  dedq,
-    const real*      __restrict__  charges
+    real4*            __restrict__  posq,
+    real*             __restrict__  dedq,
+    const real*       __restrict__  parameters,
+    const int*        __restrict__  indexAtom
 ){
     for (int natom = blockIdx.x*blockDim.x+threadIdx.x; natom < NUM_ATOMS; natom += blockDim.x*gridDim.x){
-        real newc = charges[natom];
-        realcharges[natom] = newc;
+        posq[indexAtom[natom]].w = parameters[natom*3];
         dedq[natom] = 0;
     }
 }
 
 extern "C" __global__ void calcRealCharge(
-    real*             __restrict__  realcharges,
     real*             __restrict__  dqdx_val,
-    const real4*      __restrict__  posq,
+    real4*            __restrict__  posq,
 #ifdef USE_PBC
     const int*        __restrict__  cf_idx,
     const real*       __restrict__  cf_params,
@@ -49,8 +48,8 @@ extern "C" __global__ void calcRealCharge(
             real invR = RSQRT(r2);
             real r = r2 * invR;
             real dq = k * (r - b);
-            atomicAdd(&realcharges[idx1], dq);
-            atomicAdd(&realcharges[idx2], -dq);
+            atomicAdd(&posq[indexAtom[idx1]].w, dq);
+            atomicAdd(&posq[indexAtom[idx2]].w, -dq);
 
             int pair1 = 3 * 4 * npair;
             int pair2 = 3 * (4 * npair + 1);
@@ -112,9 +111,9 @@ extern "C" __global__ void calcRealCharge(
             real angle = ACOS(cost);
 
             real dq = k * (angle - theta);
-            atomicAdd(&realcharges[idx1], dq);
-            atomicAdd(&realcharges[idx3], dq);
-            atomicAdd(&realcharges[idx2], -2 * dq);
+            atomicAdd(&posq[indexAtom[idx1]].w, dq);
+            atomicAdd(&posq[indexAtom[idx2]].w, dq);
+            atomicAdd(&posq[indexAtom[idx3]].w, -2 * dq);
 
             int pair1 = 3 * (PSHIFT4 + 9 * pidx);
             int pair2 = 3 * (PSHIFT4 + 9 * pidx + 1);

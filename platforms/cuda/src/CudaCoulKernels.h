@@ -37,8 +37,7 @@ public:
     double execute(OpenMM::ContextImpl& context, bool includeForces, bool includeEnergy);
 private:
     bool hasInitializedKernel;
-    OpenMM::CudaArray charges_cu;
-    OpenMM::CudaArray realcharges_cu;
+    OpenMM::CudaArray parameters_cu;
     OpenMM::CudaArray pairidx0, pairidx1;
     OpenMM::CudaArray expairidx0, expairidx1;
     OpenMM::CudaArray cosSinSums;

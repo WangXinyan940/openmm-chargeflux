@@ -2,9 +2,8 @@ extern "C" __global__ void calcNoPBCEnForces(
     mixed*              __restrict__     energyBuffer,
     const real4*        __restrict__     posq,
     unsigned long long* __restrict__     forceBuffers,
-    const real*         __restrict__     charges,
     real*               __restrict__     dedq,
-    const int*          __restrict__     atomIndex,
+    const real*         __restrict__     parameters,
     const int*          __restrict__     pairidx0,
     const int*          __restrict__     pairidx1,
     int                                  numParticles,
@@ -16,7 +15,7 @@ extern "C" __global__ void calcNoPBCEnForces(
         real3 delta = make_real3(posq[jj].x-posq[ii].x,posq[jj].y-posq[ii].y,posq[jj].z-posq[ii].z);
         real R2 = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
         real inverseR = RSQRT(R2);
-        real c1c2 = charges[atomIndex[ii]] * charges[atomIndex[jj]];
+        real c1c2 = posq[ii].w * posq[jj].w;
         atomicAdd(&energyBuffer[ii], ONE_4PI_EPS0 * c1c2 * inverseR);
         real dEdRdR = ONE_4PI_EPS0 * c1c2 * inverseR * inverseR * inverseR;
         real3 force = - dEdRdR * delta;
@@ -27,8 +26,8 @@ extern "C" __global__ void calcNoPBCEnForces(
         atomicAdd(&forceBuffers[jj+paddedNumAtoms], static_cast<unsigned long long>((long long) (-force.y*0x100000000)));
         atomicAdd(&forceBuffers[jj+2*paddedNumAtoms], static_cast<unsigned long long>((long long) (-force.z*0x100000000)));
 
-        atomicAdd(&dedq[atomIndex[ii]], ONE_4PI_EPS0*charges[atomIndex[jj]]*inverseR);
-        atomicAdd(&dedq[atomIndex[jj]], ONE_4PI_EPS0*charges[atomIndex[ii]]*inverseR);
+        atomicAdd(&dedq[ii], ONE_4PI_EPS0*posq[jj].w*inverseR);
+        atomicAdd(&dedq[jj], ONE_4PI_EPS0*posq[ii].w*inverseR);
     }
 }
 
@@ -36,9 +35,8 @@ extern "C" __global__ void calcNoPBCExclusions(
     mixed*              __restrict__     energyBuffer,
     const real4*        __restrict__     posq,
     unsigned long long* __restrict__     forceBuffers,
-    const real*         __restrict__     charges,
     real*               __restrict__     dedq,
-    const int*          __restrict__     atomIndex,
+    const real*         __restrict__     parameters,
     const int*          __restrict__     expairidx0,
     const int*          __restrict__     expairidx1,
     const int                            totpair,
@@ -50,7 +48,7 @@ extern "C" __global__ void calcNoPBCExclusions(
         real3 delta = make_real3(posq[jj].x-posq[ii].x,posq[jj].y-posq[ii].y,posq[jj].z-posq[ii].z);
         real R2 = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
         real inverseR = RSQRT(R2);
-        real c1c2 = charges[atomIndex[ii]] * charges[atomIndex[jj]];
+        real c1c2 = posq[ii].w * posq[jj].w;
         energyBuffer[npair] -= ONE_4PI_EPS0 * c1c2 * inverseR;
         real dEdRdR = ONE_4PI_EPS0 * c1c2 * inverseR * inverseR * inverseR;
         real3 force = dEdRdR * delta;
@@ -61,7 +59,7 @@ extern "C" __global__ void calcNoPBCExclusions(
         atomicAdd(&forceBuffers[jj+paddedNumAtoms], static_cast<unsigned long long>((long long) (-force.y*0x100000000)));
         atomicAdd(&forceBuffers[jj+2*paddedNumAtoms], static_cast<unsigned long long>((long long) (-force.z*0x100000000)));
 
-        atomicAdd(&dedq[atomIndex[ii]], -ONE_4PI_EPS0*charges[atomIndex[jj]]*inverseR);
-        atomicAdd(&dedq[atomIndex[jj]], -ONE_4PI_EPS0*charges[atomIndex[ii]]*inverseR);
+        atomicAdd(&dedq[ii], -ONE_4PI_EPS0*posq[jj].w*inverseR);
+        atomicAdd(&dedq[jj], -ONE_4PI_EPS0*posq[ii].w*inverseR);
     }
 }
