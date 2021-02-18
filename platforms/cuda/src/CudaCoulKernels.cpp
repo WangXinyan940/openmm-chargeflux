@@ -525,7 +525,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             &maxSinglePairs,                                        // unsigned int                               maxSinglePairs,
             &nb.getSinglePairs().getDevicePointer()                // const int2*               __restrict__     singlePairs
         };
-        cu.executeKernel(calcEwaldRealKernel, args, nb.getNumForceThreadBlocks()*nb.getForceThreadBlockSize(), nb.getForceThreadBlockSize());
+        // cu.executeKernel(calcEwaldRealKernel, args, nb.getNumForceThreadBlocks()*nb.getForceThreadBlockSize(), nb.getForceThreadBlockSize());
 
 
         if (numexclusions > 0){
@@ -546,7 +546,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 cu.getPeriodicBoxVecYPointer(),               //   periodicBoxVecY, 
                 cu.getPeriodicBoxVecZPointer()                //   periodicBoxVecZ
             };
-            // cu.executeKernel(calcEwaldExclusionsKernel, argsEx, numexclusions);
+            cu.executeKernel(calcEwaldExclusionsKernel, argsEx, numexclusions);
         }
         if (numFluxAngles + numFluxBonds > 0) {
             void* argsMult[] = {
