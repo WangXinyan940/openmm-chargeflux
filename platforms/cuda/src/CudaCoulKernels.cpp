@@ -81,7 +81,8 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         vector<double> parameters;
         vector<double> realc;
         for(int ii=0;ii<numParticles;ii++){
-            double prm = force.getParticleCharge(ii);
+            double prm, sig, eps;
+            force.getParticleParameters(ii, prm, sig, eps);
             parameters.push_back(prm);
             realc.push_back(prm);
         }
@@ -131,7 +132,8 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         vector<float> parameters;
         vector<float> realc;
         for(int ii=0;ii<numParticles;ii++){
-            float prm = force.getParticleCharge(ii);
+            float prm, sig, eps;
+            force.getParticleParameters(ii, prm, sig, eps);
             parameters.push_back(prm);
             realc.push_back(prm);
         }
