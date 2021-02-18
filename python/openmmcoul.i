@@ -50,10 +50,9 @@ namespace CoulPlugin {
 class CoulForce : public OpenMM::Force {
 public:
     CoulForce();
-    void addParticle(double charge);
+    void addParticle(double charge, double sigma, double epsilon);
     int getNumParticles() const;
-    double getParticleCharge(int index) const;
-    void setParticleCharge(int index, double charge);
+    void setParticleParameters(int index, double charge, double sigma, double epsilon);
     double getCutoffDistance() const;
     void setCutoffDistance(double cutoff);
     void setUsesPeriodicBoundaryConditions(bool ifPeriod);

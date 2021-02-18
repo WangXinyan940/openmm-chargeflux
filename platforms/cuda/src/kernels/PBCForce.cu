@@ -10,6 +10,7 @@ typedef struct {
     real chrg;
     real fx, fy, fz;
     real dedq;
+    real sig, eps;
     real empty;
 } AtomData;
 

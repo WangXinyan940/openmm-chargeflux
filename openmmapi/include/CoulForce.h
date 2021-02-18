@@ -24,7 +24,7 @@ public:
      * Get the pre-factor for cos accelerate force.
      * @param charge    charge of a particle
      */
-    void addParticle(double charge);
+    void addParticle(double charge, double sigma, double epsilon);
     /**
      * Get the number of particles in the system
      * @return          the number of particle
@@ -34,13 +34,13 @@ public:
      * Get the charge of specific particle
      * @return          the charge of particle
      */
-    double getParticleCharge(int index) const;
+    void getParticleParameters(int index, double& charge, double& sigma, double& epsilon) const;
     /**
      * Set charge of a specific particle
      * @param index     the index of particle
      * @param charge    the charge of particle
      */
-    void setParticleCharge(int index, double charge);
+    void setParticleParameters(int index, double charge, double sigma, double epsilon);
     /**
      * Get the cutoff of this system. Will not be used in noPBC system.
      * @return           the cutoff value
@@ -129,6 +129,7 @@ private:
     std::vector<double> fbond_params;
     std::vector<int> fangle_idx;
     std::vector<double> fangle_params;
+    std::vector<double> ljparams;
     double cutoffDistance;
     double ewaldTol;
     bool ifPBC;
