@@ -769,7 +769,7 @@ extern "C" __global__ void computeExclusion(
         real r2 = delta.x*delta.x + delta.y*delta.y + delta.z*delta.z;
         real invR = RSQRT(r2);
         real r = r2 * invR;
-        real alphaR = EWALD_ALPHA * r;
+        // real alphaR = EWALD_ALPHA * r;
         if (r < CUTOFF){
             real sig = parameters[p1*3+1] + parameters[p2*3+1];
             real sig2 = invR * sig;
