@@ -420,8 +420,8 @@ extern "C" __global__ void computeNonbonded(
             atomData1.y = posq1.y;
             atomData1.z = posq1.z;
             atomData1.q = posq1.w;
-            atomData1.sig = parameters[3*atom1+1];
-            atomData1.eps = parameters[3*atom1+2];
+            atomData1.sig = parameters[3*atomIndex[atom1]+1];
+            atomData1.eps = parameters[3*atomIndex[atom1]+2];
 
             //const unsigned int localAtomIndex = threadIdx.x;
 #ifdef USE_CUTOFF
@@ -441,8 +441,8 @@ extern "C" __global__ void computeNonbonded(
                 localData[threadIdx.x].fy = 0.0f;
                 localData[threadIdx.x].fz = 0.0f;
                 localData[threadIdx.x].q = posq[j].w;
-                localData[threadIdx.x].sig = parameters[3*j+1];
-                localData[threadIdx.x].eps = parameters[3*j+2];
+                localData[threadIdx.x].sig = parameters[3*atomIndex[j]+1];
+                localData[threadIdx.x].eps = parameters[3*atomIndex[j]+2];
                 localData[threadIdx.x].dedq = 0;
                 
             }
@@ -665,8 +665,8 @@ extern "C" __global__ void computeNonbonded(
         atomData1.y = posq1.y;
         atomData1.z = posq1.z;
         atomData1.q = posq1.w;
-        atomData1.sig = parameters[3*atom1+1];
-        atomData1.eps = parameters[3*atom1+2];
+        atomData1.sig = parameters[3*atomIndex[atom1]+1];
+        atomData1.eps = parameters[3*atomIndex[atom1]+2];
         
         int j = atom2;
         // atom2 = threadIdx.x;
@@ -677,8 +677,8 @@ extern "C" __global__ void computeNonbonded(
         atomData2.y = posq2.y;
         atomData2.z = posq2.z;
         atomData2.q = posq2.w;
-        atomData2.sig = parameters[3*atom2+1];
-        atomData2.eps = parameters[3*atom2+2];
+        atomData2.sig = parameters[3*atomIndex[atom2]+1];
+        atomData2.eps = parameters[3*atomIndex[atom2]+2];
         
         // atom2 = pair.y;
         real3 delta = make_real3(posq2.x-posq1.x, posq2.y-posq1.y, posq2.z-posq1.z);
