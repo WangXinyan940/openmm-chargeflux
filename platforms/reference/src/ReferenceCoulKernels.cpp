@@ -348,18 +348,18 @@ double ReferenceCalcCoulForceKernel::execute(ContextImpl& context, bool includeF
                 if (p1 < p2) {
                     ReferenceForce::getDeltaR(pos[p1], pos[p2], &deltaR[0]);
                     double inverseR = 1.0 / deltaR[4];
-                    double sig = ljparams[2*ii] + ljparams[2*jj];
+                    double sig = ljparams[2*p1] + ljparams[2*p2];
                     double sig2 = inverseR * sig;
                     sig2 *= sig2;
                     double sig6 = sig2*sig2*sig2;
-                    double eps = ljparams[2*ii+1] + ljparams[2*jj+1];
+                    double eps = ljparams[2*p1+1] + ljparams[2*p2+1];
                     double epssig6 = sig6*eps;
                     if (includeEnergy) {
                         energy -= ONE_4PI_EPS0*realcharges[p1]*realcharges[p2]*inverseR;
                         energy -= epssig6 * (sig6 - 1);
                     }
                     if (includeForces) {
-                        dEdR = (epssig6*(12*sig6 - 6)+ONE_4PI_EPS0*realcharges[ii]*realcharges[jj]*inverseR)*inverseR*inverseR;
+                        dEdR = (epssig6*(12*sig6 - 6)+ONE_4PI_EPS0*realcharges[p1]*realcharges[p2]*inverseR)*inverseR*inverseR;
                         for(int dd=0;dd<3;dd++){
                             forces[p1][dd] += dEdR*deltaR[dd];
                             forces[p2][dd] -= dEdR*deltaR[dd];
