@@ -7,7 +7,7 @@ sig2 *= sig2;\
 real sig6 = sig2 * sig2 * sig2;\
 real epssig6 = atomData1.eps * atomData2.eps * sig6;\
 tempEnergy += epssig6 * (sig6 - 1 );\
-printf("tE: %f\n", epssig6 * (sig6 - 1));\
+printf("r: %f | tE: %f\n", r, epssig6 * (sig6 - 1));\
 tempEnergy += ONE_4PI_EPS0 * atomData1.q * atomData2.q * invR * erfcAlphaR;\
 dEdR += ONE_4PI_EPS0 * atomData1.q * atomData2.q * invR;\
 dEdR = dEdR * (erfcAlphaR  + alphaR * EXP(- alphaR * alphaR) * TWO_OVER_SQRT_PI);\
