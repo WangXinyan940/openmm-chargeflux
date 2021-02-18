@@ -446,14 +446,14 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         };
         cu.executeKernel(indexAtomKernel, argSwitch, numParticles);
 
-        void* argUpdateCharge[] = {
-            &realcharges_cu.getDevicePointer(),
-            &dedq.getDevicePointer(),
-            &charges_cu.getDevicePointer()
-        };
-        cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
-
         if (numFluxAngles + numFluxBonds > 0){
+            void* argUpdateCharge[] = {
+                &realcharges_cu.getDevicePointer(),
+                &dedq.getDevicePointer(),
+                &charges_cu.getDevicePointer()
+            };
+            cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
+
             void* args_realc[] = {
                 &realcharges_cu.getDevicePointer(),
                 &dqdx_val.getDevicePointer(),
@@ -573,13 +573,15 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         //     cu.executeKernel(printdQdXKernel, argsPrint, 4*numFluxBonds+9*numFluxAngles);
         // }
     } else {
-        void* argUpdateCharge[] = {
-            &realcharges_cu.getDevicePointer(),
-            &dedq.getDevicePointer(),
-            &charges_cu.getDevicePointer()
-        };
-        cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
+
         if (numFluxAngles + numFluxBonds > 0){
+            void* argUpdateCharge[] = {
+                &realcharges_cu.getDevicePointer(),
+                &dedq.getDevicePointer(),
+                &charges_cu.getDevicePointer()
+            };
+            cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
+
             void* args_realc[] = {
                 &realcharges_cu.getDevicePointer(),
                 &dqdx_val.getDevicePointer(),
