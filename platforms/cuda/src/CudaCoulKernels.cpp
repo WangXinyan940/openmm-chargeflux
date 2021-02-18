@@ -68,12 +68,12 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
     for(int ii=0;ii<numParticles;ii++){
         exclusions[ii].push_back(ii);
     }
-    // for(int ii=0;ii<force.getNumExceptions();ii++){
-    //     int p1, p2;
-    //     force.getExceptionParameters(ii, p1, p2);
-    //     exclusions[p1].push_back(p2);
-    //     exclusions[p2].push_back(p1);
-    // }
+    for(int ii=0;ii<force.getNumExceptions();ii++){
+        int p1, p2;
+        force.getExceptionParameters(ii, p1, p2);
+        exclusions[p1].push_back(p2);
+        exclusions[p2].push_back(p1);
+    }
 
     // Inititalize CUDA objects.
     // if noPBC
@@ -399,7 +399,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         pbcDefines["LAST_EXCLUSION_TILE"] = cu.intToString(endExclusionIndex);
         pbcDefines["USE_PERIODIC"] = "1";
         pbcDefines["USE_CUTOFF"] = "1";
-        pbcDefines["USE_EXCLUSIONS"] = "";
+        // pbcDefines["USE_EXCLUSIONS"] = "";
         pbcDefines["USE_SYMMETRIC"] = "1";
         pbcDefines["INCLUDE_FORCES"] = "1";
         pbcDefines["INCLUDE_ENERGY"] = "1";
