@@ -1,9 +1,17 @@
 #define WARPS_PER_GROUP (THREAD_BLOCK_SIZE/TILE_SIZE)
 
 #define COMPUTE_INTERACTION \
+real sig = atomData1.sig + atomData2.sig;\
+real sig2 = inverseR * sig;\
+sig2 *= sig2;\
+real sig6 = sig2 * sig2 * sig2;\
+real epssig6 = atomData1.eps * atomData2.eps * sig6;\
+tempEnergy += epssig6 * (sig6 -1);\
 tempEnergy += ONE_4PI_EPS0 * atomData1.q * atomData2.q * invR * erfcAlphaR;\
-dEdR += ONE_4PI_EPS0 * atomData1.q * atomData2.q * invR * invR * invR;\
-dEdR = dEdR * (erfcAlphaR  + alphaR * EXP(- alphaR * alphaR) * TWO_OVER_SQRT_PI)
+dEdR += ONE_4PI_EPS0 * atomData1.q * atomData2.q * invR;\
+dEdR = dEdR * (erfcAlphaR  + alphaR * EXP(- alphaR * alphaR) * TWO_OVER_SQRT_PI);\
+dEdR += epssig6 * (12*sig6 - 6);\
+dEdR  *= invR * invR;
 
 typedef struct {
     real x, y, z, q;
@@ -129,6 +137,8 @@ extern "C" __global__ void computeNonbonded(
         atomData1.y = posq1.y;
         atomData1.z = posq1.z;
         atomData1.q = posq1.w;
+        atomData1.sig = parameters[atomIndex[atom1]*3+1];
+        atomData1.eps = parameters[atomIndex[atom1]*3+2];
         atomData1.dedq = 0;
 
 #ifdef USE_EXCLUSIONS
@@ -141,6 +151,8 @@ extern "C" __global__ void computeNonbonded(
             localData[threadIdx.x].y = posq1.y;
             localData[threadIdx.x].z = posq1.z;
             localData[threadIdx.x].q = posq1.w;
+            localData[threadIdx.x].sig = atomData1.sig;
+            localData[threadIdx.x].eps = atomData1.eps;
             localData[threadIdx.x].dedq = 0;
 
             // we do not need to fetch parameters from global since this is a symmetric tile
@@ -164,6 +176,8 @@ extern "C" __global__ void computeNonbonded(
                 atomData2.y = posq2.y;
                 atomData2.z = posq2.z;
                 atomData2.q = posq2.w;
+                atomData2.sig = localData[atom2].sig;
+                atomData2.eps = localData[atom2].eps;
 
                 atom2 = y*TILE_SIZE+j;
 #ifdef USE_SYMMETRIC
@@ -221,6 +235,8 @@ extern "C" __global__ void computeNonbonded(
             localData[threadIdx.x].fy = 0.0f;
             localData[threadIdx.x].fz = 0.0f;
             localData[threadIdx.x].q = shflPosq.w;
+            localData[threadIdx.x].sig = parameters[atomIndex[j]*2+1];
+            localData[threadIdx.x].eps = parameters[atomIndex[j]*2+2];
             localData[threadIdx.x].dedq = 0;
 
             
@@ -248,6 +264,8 @@ extern "C" __global__ void computeNonbonded(
                 atomData2.y = posq2.y;
                 atomData2.z = posq2.z;
                 atomData2.q = posq2.w;
+                atomData2.sig = localData[atom2].sig;
+                atomData2.eps = localData[atom2].eps;
 
                 atom2 = y*TILE_SIZE+tj;
 #ifdef USE_SYMMETRIC
@@ -402,6 +420,8 @@ extern "C" __global__ void computeNonbonded(
             atomData1.y = posq1.y;
             atomData1.z = posq1.z;
             atomData1.q = posq1.w;
+            atomData1.sig = parameters[3*atom1+1];
+            atomData1.eps = parameters[3*atom1+2];
 
             //const unsigned int localAtomIndex = threadIdx.x;
 #ifdef USE_CUTOFF
@@ -421,6 +441,8 @@ extern "C" __global__ void computeNonbonded(
                 localData[threadIdx.x].fy = 0.0f;
                 localData[threadIdx.x].fz = 0.0f;
                 localData[threadIdx.x].q = posq[j].w;
+                localData[threadIdx.x].sig = parameters[3*j+1];
+                localData[threadIdx.x].eps = parameters[3*j+2];
                 localData[threadIdx.x].dedq = 0;
                 
             }
@@ -459,6 +481,8 @@ extern "C" __global__ void computeNonbonded(
                     atomData2.y = posq2.y;
                     atomData2.z = posq2.z;
                     atomData2.q = posq2.w;
+                    atomData2.sig = localData[atom2].sig;
+                    atomData2.eps = localData[atom2].eps;
 
                     atom2 = atomIndices[tbx+tj];
 #ifdef USE_SYMMETRIC
@@ -538,6 +562,8 @@ extern "C" __global__ void computeNonbonded(
                     atomData2.y = posq2.y;
                     atomData2.z = posq2.z;
                     atomData2.q = posq2.w;
+                    atomData2.sig = localData[atom2].sig;
+                    atomData2.eps = localData[atom2].eps;
 
                     atom2 = atomIndices[tbx+tj];
 #ifdef USE_SYMMETRIC
@@ -639,6 +665,8 @@ extern "C" __global__ void computeNonbonded(
         atomData1.y = posq1.y;
         atomData1.z = posq1.z;
         atomData1.q = posq1.w;
+        atomData1.sig = parameters[3*atom1+1];
+        atomData1.eps = parameters[3*atom1+2];
         
         int j = atom2;
         // atom2 = threadIdx.x;
@@ -649,6 +677,8 @@ extern "C" __global__ void computeNonbonded(
         atomData2.y = posq2.y;
         atomData2.z = posq2.z;
         atomData2.q = posq2.w;
+        atomData2.sig = parameters[3*atom2+1];
+        atomData2.eps = parameters[3*atom2+2];
         
         // atom2 = pair.y;
         real3 delta = make_real3(posq2.x-posq1.x, posq2.y-posq1.y, posq2.z-posq1.z);

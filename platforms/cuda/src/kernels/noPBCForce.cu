@@ -16,8 +16,18 @@ extern "C" __global__ void calcNoPBCEnForces(
         real R2 = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
         real inverseR = RSQRT(R2);
         real c1c2 = posq[ii].w * posq[jj].w;
-        atomicAdd(&energyBuffer[ii], ONE_4PI_EPS0 * c1c2 * inverseR);
-        real dEdRdR = ONE_4PI_EPS0 * c1c2 * inverseR * inverseR * inverseR;
+
+        real sig = parameters[3*ii+1] + parameters[3*jj+1];
+        real sig2 = inverseR * sig;
+        sig2 *= sig2;
+        real sig6 = sig2 * sig2 * sig2;
+        real epssig6 = parameters[3*ii+2] * parameters[3*jj+2] * sig6;
+
+        real ener = ONE_4PI_EPS0 * c1c2 * inverseR + epssig6 * (sig6 - 1);
+
+        atomicAdd(&energyBuffer[ii], ener);
+        real dEdRdR = ONE_4PI_EPS0 * c1c2 * inverseR + epssig6 * (12 * sig6 - 6);
+        dEdRdR *= inverseR * inverseR;
         real3 force = - dEdRdR * delta;
         atomicAdd(&forceBuffers[ii], static_cast<unsigned long long>((long long) (force.x*0x100000000)));
         atomicAdd(&forceBuffers[ii+paddedNumAtoms], static_cast<unsigned long long>((long long) (force.y*0x100000000)));
@@ -49,8 +59,20 @@ extern "C" __global__ void calcNoPBCExclusions(
         real R2 = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
         real inverseR = RSQRT(R2);
         real c1c2 = posq[ii].w * posq[jj].w;
-        energyBuffer[npair] -= ONE_4PI_EPS0 * c1c2 * inverseR;
-        real dEdRdR = ONE_4PI_EPS0 * c1c2 * inverseR * inverseR * inverseR;
+
+        real sig = parameters[3*ii+1] + parameters[3*jj+1];
+        real sig2 = inverseR * sig;
+        sig2 *= sig2;
+        real sig6 = sig2 * sig2 * sig2;
+        real epssig6 = parameters[3*ii+2] * parameters[3*jj+2] * sig6;
+
+        real ener = ONE_4PI_EPS0 * c1c2 * inverseR + epssig6 * (sig6 - 1);
+
+        energyBuffer[npair] -= ener;
+
+        real dEdRdR = ONE_4PI_EPS0 * c1c2 * inverseR + epssig6 * (12 * sig6 - 6);
+        dEdRdR *= inverseR * inverseR;
+        
         real3 force = dEdRdR * delta;
         atomicAdd(&forceBuffers[ii], static_cast<unsigned long long>((long long) (force.x*0x100000000)));
         atomicAdd(&forceBuffers[ii+paddedNumAtoms], static_cast<unsigned long long>((long long) (force.y*0x100000000)));
