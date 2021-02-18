@@ -48,8 +48,13 @@ extern "C" __global__ void calcRealCharge(
             real invR = RSQRT(r2);
             real r = r2 * invR;
             real dq = k * (r - b);
+#ifdef USE_PBC
             atomicAdd(&posq[indexAtom[idx1]].w, dq);
             atomicAdd(&posq[indexAtom[idx2]].w, -dq);
+#else
+            atomicAdd(&posq[idx1].w, dq);
+            atomicAdd(&posq[idx2].w, -dq);
+#endif
 
             int pair1 = 3 * 4 * npair;
             int pair2 = 3 * (4 * npair + 1);
@@ -111,9 +116,15 @@ extern "C" __global__ void calcRealCharge(
             real angle = ACOS(cost);
 
             real dq = k * (angle - theta);
+#ifdef USE_PBC
             atomicAdd(&posq[indexAtom[idx1]].w, dq);
             atomicAdd(&posq[indexAtom[idx2]].w, dq);
             atomicAdd(&posq[indexAtom[idx3]].w, -2 * dq);
+#else
+            atomicAdd(&posq[idx1].w, dq);
+            atomicAdd(&posq[idx2].w, dq);
+            atomicAdd(&posq[idx3].w, -2 * dq);
+#endif
 
             int pair1 = 3 * (PSHIFT4 + 9 * pidx);
             int pair2 = 3 * (PSHIFT4 + 9 * pidx + 1);
