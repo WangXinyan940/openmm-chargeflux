@@ -771,8 +771,16 @@ extern "C" __global__ void computeExclusion(
         real r = r2 * invR;
         real alphaR = EWALD_ALPHA * r;
         if (r < CUTOFF){
-            energyBuffer[npair] -= ONE_4PI_EPS0 * c1c2 * invR;
-            real dEdR = - ONE_4PI_EPS0 * c1c2 * invR * invR * invR;
+
+            real sig = parameters[p1*3+1] + parameters[p2*3+1];
+            real sig2 = invR * sig;
+            sig2 *= sig2;
+            real sig6 = sig2 * sig2 * sig2;
+            real epssig6 = parameters[p1*3+2] * parameters[p2*3+2] * sig6;
+
+            energyBuffer[npair] -= ONE_4PI_EPS0 * c1c2 * invR + epssig6 * (sig6 - 1);
+            real dEdR = - ONE_4PI_EPS0 * c1c2 * invR - epssig6 * (12*sig6 - 6);
+            dEdR *= invR * invR;
             // dEdR = dEdR * (alphaR * EXP(- alphaR * alphaR) * TWO_OVER_SQRT_PI + erfcAlphaR);
             delta *= dEdR;
 
@@ -783,8 +791,8 @@ extern "C" __global__ void computeExclusion(
             atomicAdd(&forceBuffers[atom2+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (delta.y*0x100000000)));
             atomicAdd(&forceBuffers[atom2+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (delta.z*0x100000000)));
 
-            atomicAdd(&dedq[atomIndex[atom1]], -ONE_4PI_EPS0*posq2.w*invR);
-            atomicAdd(&dedq[atomIndex[atom2]], -ONE_4PI_EPS0*posq1.w*invR);
+            atomicAdd(&dedq[p1], -ONE_4PI_EPS0*posq2.w*invR);
+            atomicAdd(&dedq[p2], -ONE_4PI_EPS0*posq1.w*invR);
         }
     }
 }
