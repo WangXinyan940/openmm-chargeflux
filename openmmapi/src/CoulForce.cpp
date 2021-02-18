@@ -17,8 +17,8 @@ CoulForce::CoulForce() {
 
 void CoulForce::addParticle(double charge, double sigma, double epsilon){
     charges.push_back(charge);
-    ljparams.push_back(sigma / 2);
-    ljparams.push_back(2*sqrt(epsilon));
+    ljparams.push_back(sigma);
+    ljparams.push_back(epsilon);
 }
 
 int CoulForce::getNumParticles() const {
@@ -27,14 +27,14 @@ int CoulForce::getNumParticles() const {
 
 void CoulForce::getParticleParameters(int index, double& charge, double& sigma, double& epsilon) const {
     charge = charges[index];
-    sigma = ljparams[2*index] * 2;
-    epsilon = ljparams[2*index+1] * ljparams[2*index+1] / 4;
+    sigma = ljparams[2*index];
+    epsilon = ljparams[2*index+1];
 }
 
 void CoulForce::setParticleParameters(int index, double charge, double sigma, double epsilon) {
     charges[index] = charge;
-    ljparams[2*index] = sigma / 2;
-    ljparams[2*index+1] = 2*sqrt(epsilon);
+    ljparams[2*index] = sigma;
+    ljparams[2*index+1] = epsilon;
 }
 
 double CoulForce::getCutoffDistance() const {
