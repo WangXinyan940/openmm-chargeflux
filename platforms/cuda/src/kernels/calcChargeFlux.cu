@@ -95,11 +95,11 @@ extern "C" __global__ void calcRealCharge(
             real4 posq2 = posq[indexAtom[idx2]];
             real4 posq3 = posq[indexAtom[idx3]];
             real3 d21 = make_real3(posq1.x-posq2.x, posq1.y-posq2.y, posq1.z-posq2.z);
-            // APPLY_PERIODIC_TO_DELTA(d21)
+            APPLY_PERIODIC_TO_DELTA(d21)
             real3 d23 = make_real3(posq3.x-posq2.x, posq3.y-posq2.y, posq3.z-posq2.z);
-            // APPLY_PERIODIC_TO_DELTA(d23)
+            APPLY_PERIODIC_TO_DELTA(d23)
             real3 d13 = make_real3(posq3.x-posq1.x, posq3.y-posq1.y, posq3.z-posq1.z);
-            // APPLY_PERIODIC_TO_DELTA(d13)
+            APPLY_PERIODIC_TO_DELTA(d13)
 #else
             real4 posq1 = posq[idx1];
             real4 posq2 = posq[idx2];
