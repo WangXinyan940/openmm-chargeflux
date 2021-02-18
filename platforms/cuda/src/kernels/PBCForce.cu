@@ -2,7 +2,7 @@
 
 #define COMPUTE_INTERACTION \
 real sig = atomData1.sig + atomData2.sig;\
-real sig2 = inverseR * sig;\
+real sig2 = invR * sig;\
 sig2 *= sig2;\
 real sig6 = sig2 * sig2 * sig2;\
 real epssig6 = atomData1.eps * atomData2.eps * sig6;\
