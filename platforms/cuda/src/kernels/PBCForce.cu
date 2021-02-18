@@ -523,7 +523,7 @@ extern "C" __global__ void computeNonbonded(
                 for (j = 0; j < TILE_SIZE; j++) {
                     int atom2 = tbx+tj;
 
-                    real4 posq2 = make_real4(localData[atom2].x, localData[atom2].y, localData[atom2].z, localData[atom2].w);
+                    real4 posq2 = make_real4(localData[atom2].x, localData[atom2].y, localData[atom2].z, localData[atom2].q);
                     real3 delta = make_real3(posq2.x-posq1.x, posq2.y-posq1.y, posq2.z-posq1.z);
 #ifdef USE_PERIODIC
                     APPLY_PERIODIC_TO_DELTA(delta)
@@ -753,8 +753,8 @@ extern "C" __global__ void computeExclusion(
             atomicAdd(&forceBuffers[atom2+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (delta.y*0x100000000)));
             atomicAdd(&forceBuffers[atom2+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (delta.z*0x100000000)));
 
-            atomicAdd(&dedq[atomIndex[atom1]], -ONE_4PI_EPS0*prm2*invR);
-            atomicAdd(&dedq[atomIndex[atom2]], -ONE_4PI_EPS0*prm1*invR);
+            atomicAdd(&dedq[atomIndex[atom1]], -ONE_4PI_EPS0*posq2.w*invR);
+            atomicAdd(&dedq[atomIndex[atom2]], -ONE_4PI_EPS0*posq1.w*invR);
         }
     }
 }
