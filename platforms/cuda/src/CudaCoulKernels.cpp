@@ -572,8 +572,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             void* argUpdateCharge[] = {
                 &cu.getPosq().getDevicePointer(), 
                 &dedq.getDevicePointer(),
-                &parameters_cu.getDevicePointer(),
-                &indexAtom.getDevicePointer()
+                &parameters_cu.getDevicePointer()
             };
             cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
 
