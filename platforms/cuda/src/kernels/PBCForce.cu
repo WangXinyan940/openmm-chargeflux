@@ -149,7 +149,7 @@ extern "C" __global__ void computeNonbonded(
                 int atom2 = tbx+j;
                 real4 posq2;
 
-                posq2 = make_real4(localData[atom2].x, localData[atom2].y, localData[atom2].z, localData[atom2].w);
+                posq2 = make_real4(localData[atom2].x, localData[atom2].y, localData[atom2].z, localData[atom2].q);
                 real3 delta = make_real3(posq2.x-posq1.x, posq2.y-posq1.y, posq2.z-posq1.z);
 #ifdef USE_PERIODIC
                 APPLY_PERIODIC_TO_DELTA(delta)
@@ -232,7 +232,7 @@ extern "C" __global__ void computeNonbonded(
             for (j = 0; j < TILE_SIZE; j++) {
                 int atom2 = tbx+tj;
 
-                real4 posq2 = make_real3(localData[atom2].x, localData[atom2].y, localData[atom2].z, localData[atom2].w);
+                real4 posq2 = make_real4(localData[atom2].x, localData[atom2].y, localData[atom2].z, localData[atom2].q);
 
                 real3 delta = make_real3(posq2.x-posq1.x, posq2.y-posq1.y, posq2.z-posq1.z);
 #ifdef USE_PERIODIC
@@ -446,9 +446,9 @@ extern "C" __global__ void computeNonbonded(
                 for (j = 0; j < TILE_SIZE; j++) {
                     int atom2 = tbx+tj;
 
-                    real4 posq2 = make_real3(localData[atom2].x, localData[atom2].y, localData[atom2].z, localData[atom2].w);
+                    real4 posq2 = make_real4(localData[atom2].x, localData[atom2].y, localData[atom2].z, localData[atom2].q);
 
-                    real3 delta = make_real3(posq2.x-posq1.x, posq2.y-posq1.y, posq2.z-posq1.z);
+                    real3 delta = make_real4(posq2.x-posq1.x, posq2.y-posq1.y, posq2.z-posq1.z);
                     real r2 = delta.x*delta.x + delta.y*delta.y + delta.z*delta.z;
                     real invR = RSQRT(r2);
                     real r = r2*invR;
@@ -523,7 +523,7 @@ extern "C" __global__ void computeNonbonded(
                 for (j = 0; j < TILE_SIZE; j++) {
                     int atom2 = tbx+tj;
 
-                    real4 posq2 = make_real3(localData[atom2].x, localData[atom2].y, localData[atom2].z, localData[atom2].w);
+                    real4 posq2 = make_real4(localData[atom2].x, localData[atom2].y, localData[atom2].z, localData[atom2].w);
                     real3 delta = make_real3(posq2.x-posq1.x, posq2.y-posq1.y, posq2.z-posq1.z);
 #ifdef USE_PERIODIC
                     APPLY_PERIODIC_TO_DELTA(delta)
