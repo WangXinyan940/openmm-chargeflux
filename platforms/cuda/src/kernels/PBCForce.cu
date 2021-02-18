@@ -771,7 +771,6 @@ extern "C" __global__ void computeExclusion(
         real r = r2 * invR;
         real alphaR = EWALD_ALPHA * r;
         if (r < CUTOFF){
-
             real sig = parameters[p1*3+1] + parameters[p2*3+1];
             real sig2 = invR * sig;
             sig2 *= sig2;
