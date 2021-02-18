@@ -86,7 +86,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
             parameters.push_back(sig/2);
             parameters.push_back(2*sqrt(eps));
         }
-        parameters_cu.initialize(cu, numParticles, elementSize, "parameters");
+        parameters_cu.initialize(cu, numParticles*3, elementSize, "parameters");
         parameters_cu.upload(parameters);
 
         vector<int> cfidx;
@@ -134,7 +134,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
             parameters.push_back(sig/2);
             parameters.push_back(2*sqrt(eps));
         }
-        parameters_cu.initialize(cu, numParticles, elementSize, "parameters");
+        parameters_cu.initialize(cu, numParticles*3, elementSize, "parameters");
         parameters_cu.upload(parameters);
 
         vector<int> cfidx;
