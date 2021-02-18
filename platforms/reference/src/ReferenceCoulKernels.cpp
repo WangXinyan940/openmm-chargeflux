@@ -170,8 +170,8 @@ void ReferenceCalcCoulForceKernel::initialize(const System& system, const CoulFo
         double charge, sig, eps;
         force.getParticleParameters(i, charge, sig, eps);
         charges[i] = charge;
-        ljparams[2*i] = sig;
-        ljparams[2*i+1] = eps;
+        ljparams[2*i] = 0.5*sig;
+        ljparams[2*i+1] = 2.0*sqrt(eps);
     }
     realcharges.resize(numParticles);
     numCFBonds = force.getNumFluxBonds();
