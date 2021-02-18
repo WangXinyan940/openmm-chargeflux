@@ -172,9 +172,9 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
             }
         }
         cf_idx.initialize(cu, cfidx.size(), sizeof(int), "cfidx");
-        cf_idx.upload(faidx);
+        cf_idx.upload(cfidx);
         cf_params.initialize(cu, cfprms.size(), elementSize, "cfparams");
-        cf_params.upload(faprms);
+        cf_params.upload(cfprms);
     }
 
     if (numFluxAngles + numFluxBonds > 0){
