@@ -404,13 +404,20 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         pbcDefines["INCLUDE_ENERGY"] = "1";
         pbcDefines["CUTOFF"] = cu.doubleToString(cutoff);
 
-        pbcDefines["USE_DOUBLE_PRECISION"] = cu.getUseDoublePrecision() ? "1" : "";
+        if (cu.getUseDoublePrecision()){
+            pbcDefines["USE_DOUBLE_PRECISION"] = "1";
+        }
         pbcDefines["EWALD_ALPHA"] = cu.doubleToString(alpha);
         pbcDefines["TWO_OVER_SQRT_PI"] = cu.doubleToString(2.0/sqrt(M_PI));
         pbcDefines["ONE_OVER_SQRT_PI"] = cu.doubleToString(1.0/sqrt(M_PI));
         pbcDefines["KMAX_X"] = cu.intToString(kmaxx);
         pbcDefines["KMAX_Y"] = cu.intToString(kmaxy);
         pbcDefines["KMAX_Z"] = cu.intToString(kmaxz);
+        pbcDefines["KSIZEX"] = cu.intToString(2*kmaxx-1);
+        pbcDefines["KSIZEY"] = cu.intToString(2*kmaxy-1);
+        pbcDefines["KSIZEYZ"] = cu.intToString((2*kmaxy-1)*(2*kmaxz-1));
+        pbcDefines["KSIZEZ"] = cu.intToString(2*kmaxz-1);
+        pbcDefines["TOTALK"] = cu.intToString((2*kmaxx-1)*(2*kmaxy-1)*(2*kmaxz-1));
         pbcDefines["EXP_COEFFICIENT"] = cu.doubleToString(-1.0/(4.0*alpha*alpha));
         pbcDefines["ONE_4PI_EPS0"] = cu.doubleToString(ONE_4PI_EPS0);
         pbcDefines["M_PI"] = cu.doubleToString(M_PI);
