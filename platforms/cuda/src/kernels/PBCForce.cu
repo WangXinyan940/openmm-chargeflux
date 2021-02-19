@@ -951,8 +951,8 @@ extern "C" __global__ void computeEwaldRecForce(
             real3 forcesum = make_real3(0);
             real dedqsum = 0;
             for(int ii=0;ii<EWALDFORCEBLOCK;ii++){
-                forcesum += sharedforce[ii];
-                dedqsum += shareddedqv[ii];
+                // forcesum += sharedforce[ii];
+                // dedqsum += shareddedqv[ii];
             }
         //     atomicAdd(&forceBuffers[atom], static_cast<unsigned long long>((long long) (forcesum.x*0x100000000)));
         //     atomicAdd(&forceBuffers[atom+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (forcesum.y*0x100000000)));
