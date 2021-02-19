@@ -919,15 +919,15 @@ extern "C" __global__ void computeEwaldRecForce(
                     real k2 = kx*kx + ky*ky + kz*kz;
                     real ak = EXP(k2*EXP_COEFFICIENT)/k2*2*reciprocalCoefficient;
                     real phase3 = phase2 + apos.z*kz;
-                    real2 structureFactor = make_real2(COS(phase3), SIN(phase3));
+                    real2 structureFactor = make_real2(COS(phase3), SIN(phase3)) * ak;
                     // real cossum = cosSinSums[index*2]*ak;
                     // real sinsum = cosSinSums[index*2+1]*ak;
                     real2 cossin = cosSinSums[index];
-                    real dEdR = ak*apos.w*(cossin.x*structureFactor.y - cossin.y*structureFactor.x);
+                    real dEdR = apos.w*(cossin.x*structureFactor.y - cossin.y*structureFactor.x);
                     force.x += dEdR*kx;
                     force.y += dEdR*ky;
                     force.z += dEdR*kz;
-                    dedqv += ak*(cossin.x*structureFactor.x + cossin.y*structureFactor.y);
+                    dedqv += cossin.x*structureFactor.x + cossin.y*structureFactor.y;
 
                     lowrz = 1 - KMAX_Z;
                 }
