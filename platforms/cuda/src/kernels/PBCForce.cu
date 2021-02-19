@@ -895,6 +895,10 @@ extern "C" __global__ void computeEwaldRecForce(
     unsigned int atom = blockIdx.x*blockDim.x+threadIdx.x;
     real3 reciprocalBoxSize = make_real3(2*M_PI*invPeriodicBoxSize.x, 2*M_PI*invPeriodicBoxSize.y, 2*M_PI*invPeriodicBoxSize.z);
     real reciprocalCoefficient = ONE_4PI_EPS0*4*M_PI*(invPeriodicBoxSize.x*invPeriodicBoxSize.y*invPeriodicBoxSize.z);
+
+    real cossum = 0.0;
+    real sinsum = 0.0;
+
     while (atom < NUM_ATOMS) {
         real3 force = make_real3(0);
         real dedqv = 0;
@@ -914,18 +918,18 @@ extern "C" __global__ void computeEwaldRecForce(
                     real kz = rz*reciprocalBoxSize.z;
 
                     // Compute the force contribution of this wave vector.
-                    // int index = rx*KSIZEYZ + (ry+KMAX_Y-1)*KSIZEZ + (rz+KMAX_Z-1);
-                    // real k2 = kx*kx + ky*ky + kz*kz;
-                    // real ak = EXP(k2*EXP_COEFFICIENT)/k2*2*reciprocalCoefficient;
-                    // real phase3 = phase2 + apos.z*kz;
-                    // real2 structureFactor = make_real2(COS(phase3), SIN(phase3));
+                    int index = rx*KSIZEYZ + (ry+KMAX_Y-1)*KSIZEZ + (rz+KMAX_Z-1);
+                    real k2 = kx*kx + ky*ky + kz*kz;
+                    real ak = EXP(k2*EXP_COEFFICIENT)/k2*2*reciprocalCoefficient;
+                    real phase3 = phase2 + apos.z*kz;
+                    real2 structureFactor = make_real2(COS(phase3), SIN(phase3));
                     // real cossum = cosSinSums[index*2]*ak;
                     // real sinsum = cosSinSums[index*2+1]*ak;
-                    // real dEdR = apos.w*(cossum*structureFactor.y - sinsum*structureFactor.x);
-                    // force.x += dEdR*kx;
-                    // force.y += dEdR*ky;
-                    // force.z += dEdR*kz;
-                    // dedqv += cossum*structureFactor.x + sinsum*structureFactor.y;
+                    real dEdR = apos.w*(cossum*structureFactor.y - sinsum*structureFactor.x);
+                    force.x += dEdR*kx;
+                    force.y += dEdR*ky;
+                    force.z += dEdR*kz;
+                    dedqv += cossum*structureFactor.x + sinsum*structureFactor.y;
 
                     lowrz = 1 - KMAX_Z;
                 }
