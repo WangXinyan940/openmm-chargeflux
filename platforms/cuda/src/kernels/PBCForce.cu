@@ -195,6 +195,7 @@ extern "C" __global__ void computeNonbonded(
                 const real interactionScale = 0.5f;
                 if (!isExcluded && r2 < cutoff2){
                     real alphaR = EWALD_ALPHA * r;
+                    const real expAlphaRSqr = EXP(-alphaR*alphaR);
 #ifdef USE_DOUBLE_PRECISION
                     const real erfcAlphaR = erfc(alphaR);
 #else
@@ -285,6 +286,7 @@ extern "C" __global__ void computeNonbonded(
 
                 if (!isExcluded && r2 < cutoff2){
                     real alphaR = EWALD_ALPHA * r;
+                    const real expAlphaRSqr = EXP(-alphaR*alphaR);
 #ifdef USE_DOUBLE_PRECISION
                     const real erfcAlphaR = erfc(alphaR);
 #else
@@ -503,6 +505,7 @@ extern "C" __global__ void computeNonbonded(
 
                     if (!isExcluded && r2 < cutoff2){
                         real alphaR = EWALD_ALPHA * r;
+                        const real expAlphaRSqr = EXP(-alphaR*alphaR);
 #ifdef USE_DOUBLE_PRECISION
                         const real erfcAlphaR = erfc(alphaR);
 #else
@@ -584,6 +587,7 @@ extern "C" __global__ void computeNonbonded(
 
                     if (!isExcluded && r2 < cutoff2){
                         real alphaR = EWALD_ALPHA * r;
+                        const real expAlphaRSqr = EXP(-alphaR*alphaR);
 #ifdef USE_DOUBLE_PRECISION
                         const real erfcAlphaR = erfc(alphaR);
 #else
@@ -706,6 +710,7 @@ extern "C" __global__ void computeNonbonded(
 
         if (!isExcluded && r2 < cutoff2){
             real alphaR = EWALD_ALPHA * r;
+            const real expAlphaRSqr = EXP(-alphaR*alphaR);
 #ifdef USE_DOUBLE_PRECISION
             const real erfcAlphaR = erfc(alphaR);
 #else
@@ -839,7 +844,7 @@ extern "C" __global__ void computeEwaldRecEner(
     real reciprocalCoefficient = ONE_4PI_EPS0*4*M_PI*(invPeriodicBoxSize.x*invPeriodicBoxSize.y*invPeriodicBoxSize.z);
     unsigned int index = blockIdx.x*blockDim.x+threadIdx.x;
     mixed energy = 0;
-    while (index < (KMAX_Y-1)*ksizez+KMAX_Z)
+    while (index < (KMAX_Y-1)*KSIZEZ+KMAX_Z)
         index += blockDim.x*gridDim.x;
     while (index < TOTALK) {
         // Find the wave vector (kx, ky, kz) this index corresponds to.
