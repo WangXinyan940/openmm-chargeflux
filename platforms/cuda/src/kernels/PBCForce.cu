@@ -896,9 +896,6 @@ extern "C" __global__ void computeEwaldRecForce(
     real3 reciprocalBoxSize = make_real3(2*M_PI*invPeriodicBoxSize.x, 2*M_PI*invPeriodicBoxSize.y, 2*M_PI*invPeriodicBoxSize.z);
     real reciprocalCoefficient = ONE_4PI_EPS0*4*M_PI*(invPeriodicBoxSize.x*invPeriodicBoxSize.y*invPeriodicBoxSize.z);
 
-    real cossum = 0.0;
-    real sinsum = 0.0;
-
     while (atom < NUM_ATOMS) {
         real3 force = make_real3(0);
         real dedqv = 0;
@@ -925,6 +922,8 @@ extern "C" __global__ void computeEwaldRecForce(
                     real2 structureFactor = make_real2(COS(phase3), SIN(phase3));
                     // real cossum = cosSinSums[index*2]*ak;
                     // real sinsum = cosSinSums[index*2+1]*ak;
+                    real cossum = 0.5 * ak;
+                    real sinsum = 0.5 * ak;
                     real dEdR = apos.w*(cossum*structureFactor.y - sinsum*structureFactor.x);
                     force.x += dEdR*kx;
                     force.y += dEdR*ky;
