@@ -913,7 +913,11 @@ extern "C" __global__ void computeEwaldRecForce(
                     real k2 = kx*kx + ky*ky + kz*kz;
                     real ak = EXP(k2*EXP_COEFFICIENT)/k2*2*reciprocalCoefficient;
                     real phase3 = phase2 + apos.z*kz;
+#ifdef USE_DOUBLE_PRECISION
                     real2 structureFactor = make_real2(COS(phase3), SIN(phase3));
+#else 
+                    real2 structureFactor = make_real2(__cosf(phase3), __sinf(phase3));
+#endif
                     real cossum = cosSinSums[index*2]*ak;
                     real sinsum = cosSinSums[index*2+1]*ak;
                     real dEdR = apos.w*(cossum*structureFactor.y - sinsum*structureFactor.x);
