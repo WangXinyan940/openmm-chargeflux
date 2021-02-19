@@ -918,6 +918,7 @@ extern "C" __global__ void computeEwaldRecForce(
                     int index = rx*KSIZEYZ + (ry+KMAX_Y-1)*KSIZEZ + (rz+KMAX_Z-1);
                     real k2 = kx*kx + ky*ky + kz*kz;
                     real ak = EXP(k2*EXP_COEFFICIENT)/k2*2*reciprocalCoefficient;
+                    printf("AK: %f\n", ak);
                     real phase3 = phase2 + apos.z*kz;
                     real2 structureFactor = make_real2(COS(phase3), SIN(phase3));
                     // real cossum = cosSinSums[index*2]*ak;
