@@ -944,8 +944,8 @@ extern "C" __global__ void computeEwaldRecForce(
 
         // }
 
-        // sharedforce[threadIdx.x] = force;
-        // shareddedqv[threadIdx.x] = dedqv;
+        sharedforce[threadIdx.x] = force;
+        shareddedqv[threadIdx.x] = dedqv;
         // __syncthreads();
         if (threadIdx.x == 0){
             real3 forcesum = make_real3(0);
