@@ -941,12 +941,16 @@ extern "C" __global__ void computeEwaldRecForce(
         shareddedqv[threadIdx.x] += dedqv;
         __syncthreads();
         if (threadIdx.x == 0){
+            real3 forcesum = make_real3(0);
+            real dedqsum = 0;
             for(int ii=0;ii<THREAD_BLOCK_SIZE;ii++){
-                atomicAdd(&forceBuffers[atom], static_cast<unsigned long long>((long long) (sharedforce[ii].x*0x100000000)));
-                atomicAdd(&forceBuffers[atom+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (sharedforce[ii].y*0x100000000)));
-                atomicAdd(&forceBuffers[atom+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (sharedforce[ii].z*0x100000000)));
-                atomicAdd(&dedq[atomIndex[atom]], shareddedqv[ii]);
+                forcesum += sharedforce[ii];
+                dedqsum += shareddedqv[ii];
             }
+            atomicAdd(&forceBuffers[atom], static_cast<unsigned long long>((long long) (forcesum.x*0x100000000)));
+            atomicAdd(&forceBuffers[atom+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (forcesum.y*0x100000000)));
+            atomicAdd(&forceBuffers[atom+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (forcesum.z*0x100000000)));
+            atomicAdd(&dedq[atomIndex[atom]], dedqsum);
         }
 
         // Record the force on the atom.
