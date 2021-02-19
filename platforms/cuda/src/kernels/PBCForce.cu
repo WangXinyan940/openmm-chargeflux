@@ -835,23 +835,19 @@ extern "C" __global__ void computeEwaldRecEner(
     real4                                      periodicBoxSize,
     real4                                      invPeriodicBoxSize
 ){
-    const unsigned int ksizex = 2*KMAX_X-1;
-    const unsigned int ksizey = 2*KMAX_Y-1;
-    const unsigned int ksizez = 2*KMAX_Z-1;
-    const unsigned int totalK = ksizex*ksizey*ksizez;
     real3 reciprocalBoxSize = make_real3(2*M_PI*invPeriodicBoxSize.x, 2*M_PI*invPeriodicBoxSize.y, 2*M_PI*invPeriodicBoxSize.z);
     real reciprocalCoefficient = ONE_4PI_EPS0*4*M_PI*(invPeriodicBoxSize.x*invPeriodicBoxSize.y*invPeriodicBoxSize.z);
     unsigned int index = blockIdx.x*blockDim.x+threadIdx.x;
     mixed energy = 0;
     while (index < (KMAX_Y-1)*ksizez+KMAX_Z)
         index += blockDim.x*gridDim.x;
-    while (index < totalK) {
+    while (index < TOTALK) {
         // Find the wave vector (kx, ky, kz) this index corresponds to.
 
-        int rx = index/(ksizey*ksizez);
-        int remainder = index - rx*ksizey*ksizez;
-        int ry = remainder/ksizez;
-        int rz = remainder - ry*ksizez - KMAX_Z + 1;
+        int rx = index/KSIZEYZ;
+        int remainder = index - rx*KSIZEYZ;
+        int ry = remainder/KSIZEZ;
+        int rz = remainder - ry*KSIZEZ - KMAX_Z + 1;
         ry += -KMAX_Y + 1;
         real kx = rx*reciprocalBoxSize.x;
         real ky = ry*reciprocalBoxSize.y;
@@ -863,8 +859,9 @@ extern "C" __global__ void computeEwaldRecEner(
         real sinsum = 0;
         for (int atom = 0; atom < NUM_ATOMS; atom++) {
             real4 apos = posq[atom];
-            real costmp = COS(apos.x*kx + apos.y*ky + apos.z*kz);
-            real sintmp = SIN(apos.x*kx + apos.y*ky + apos.z*kz);
+            real pdotk = apos.x*kx + apos.y*ky + apos.z*kz;
+            real costmp = COS(pdotk);
+            real sintmp = SIN(pdotk);
             cossum += costmp * apos.w;
             sinsum += sintmp * apos.w;
         }
@@ -912,19 +909,19 @@ extern "C" __global__ void computeEwaldRecForce(
                     real kz = rz*reciprocalBoxSize.z;
 
                     // Compute the force contribution of this wave vector.
-                    int index = rx*(KMAX_Y*2-1)*(KMAX_Z*2-1) + (ry+KMAX_Y-1)*(KMAX_Z*2-1) + (rz+KMAX_Z-1);
+                    int index = rx*KSIZEYZ + (ry+KMAX_Y-1)*KSIZEZ + (rz+KMAX_Z-1);
                     real k2 = kx*kx + ky*ky + kz*kz;
-                    real ak = EXP(k2*EXP_COEFFICIENT)/k2;
+                    real ak = EXP(k2*EXP_COEFFICIENT)/k2*2*reciprocalCoefficient;
                     real phase3 = phase2 + apos.z*kz;
                     real2 structureFactor = make_real2(COS(phase3), SIN(phase3));
-                    real cossum = cosSinSums[index*2];
-                    real sinsum = cosSinSums[index*2+1];
-                    real dEdR = 2*reciprocalCoefficient*ak*apos.w*(cossum*structureFactor.y - sinsum*structureFactor.x);
+                    real cossum = cosSinSums[index*2]*ak;
+                    real sinsum = cosSinSums[index*2+1]*ak;
+                    real dEdR = apos.w*(cossum*structureFactor.y - sinsum*structureFactor.x);
                     force.x += dEdR*kx;
                     force.y += dEdR*ky;
                     force.z += dEdR*kz;
 
-                    dedqv += 2*reciprocalCoefficient*ak*(cossum*structureFactor.x + sinsum*structureFactor.y);
+                    dedqv += cossum*structureFactor.x + sinsum*structureFactor.y;
 
                     lowrz = 1 - KMAX_Z;
                 }
@@ -941,55 +938,5 @@ extern "C" __global__ void computeEwaldRecForce(
         atomicAdd(&dedq[atomIndex[atom]], dedqv);
 
         atom += blockDim.x*gridDim.x;
-    }
-}
-
-extern "C" __global__ void computeEwaldRecForce2(
-    unsigned long long*       __restrict__     forceBuffers, 
-    real*                     __restrict__     dedq,
-    const real4*              __restrict__     posq, 
-    const int*                __restrict__     atomIndex,
-    const real*               __restrict__     cosSinSums, 
-    real4                                      periodicBoxSize,
-    real4                                      invPeriodicBoxSize
-){
-
-    real3 reciprocalBoxSize = make_real3(2*M_PI*invPeriodicBoxSize.x, 2*M_PI*invPeriodicBoxSize.y, 2*M_PI*invPeriodicBoxSize.z);
-    real reciprocalCoefficient = ONE_4PI_EPS0*4*M_PI*(invPeriodicBoxSize.x*invPeriodicBoxSize.y*invPeriodicBoxSize.z);
-    
-    unsigned int index = blockIdx.x*blockDim.x+threadIdx.x;
-    mixed energy = 0;
-    while (index < (KMAX_Y-1)*ksizez+KMAX_Z)
-        index += blockDim.x*gridDim.x;
-    while (index < TOTALK) {
-        // Find the wave vector (kx, ky, kz) this index corresponds to.
-
-        int rx = index/(KSIZEYZ);
-        int remainder = index - rx*KSIZEYZ;
-        int ry = remainder/KSIZEZ;
-        int rz = remainder - ry*KSIZEZ - KMAX_Z + 1;
-        ry += -KMAX_Y + 1;
-        real kx = rx*reciprocalBoxSize.x;
-        real ky = ry*reciprocalBoxSize.y;
-        real kz = rz*reciprocalBoxSize.z;
-        real k2 = kx*kx + ky*ky + kz*kz;
-        real ak = EXP(k2*EXP_COEFFICIENT)/k2*reciprocalCoefficient*2;
-        real cossum = cosSinSums[index*2];
-        real sinsum = cosSinSums[index*2+1];
-        for (int atom = 0; atom < NUM_ATOMS; atom++) {
-            real4 apos = posq[atom];
-            real rdotk = apos.x*kx + apos.y*ky + apos.z*kz;
-            real costmp = COS(rdotk);
-            real sintmp = SIN(rdotk);
-
-            real dEdR = ak*apos.w*(cossum*sintmp - sinsum*costmp);
-            real dedqv = ak*(cossum*costmp + sinsum*sintmp);
-
-            atomicAdd(&forceBuffers[atom], static_cast<unsigned long long>((long long) (dEdR*kx*0x100000000)));
-            atomicAdd(&forceBuffers[atom+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (dEdR*ky*0x100000000)));
-            atomicAdd(&forceBuffers[atom+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (dEdR*kz*0x100000000)));
-            atomicAdd(&dedq[atomIndex[atom]], dedqv);
-        }
-        index += blockDim.x*gridDim.x;
     }
 }
