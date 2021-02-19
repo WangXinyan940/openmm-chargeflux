@@ -419,7 +419,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         CUmodule PBCModule = cu.createModule(CudaKernelSources::vectorOps + CudaCoulKernelSources::PBCForce, pbcDefines);
         calcEwaldSelfEnerKernel = cu.getKernel(PBCModule, "computeEwaldSelfEner");
         calcEwaldRecEnerKernel = cu.getKernel(PBCModule, "computeEwaldRecEner");
-        calcEwaldRecForceKernel = cu.getKernel(PBCModule, "computeEwaldRecForce2");
+        calcEwaldRecForceKernel = cu.getKernel(PBCModule, "computeEwaldRecForce");
         calcEwaldRealKernel = cu.getKernel(PBCModule, "computeNonbonded");
         calcEwaldExclusionsKernel = cu.getKernel(PBCModule, "computeExclusion");
         indexAtomKernel = cu.getKernel(PBCModule, "genIndexAtom");
@@ -491,7 +491,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             cu.getPeriodicBoxSizePointer(),                         // real4                                      periodicBoxSize
             cu.getInvPeriodicBoxSizePointer()                       // real4     
         };
-        cu.executeKernel(calcEwaldRecForceKernel, args_rec2, (2*kmaxx-1)*(2*kmaxy-1)*(2*kmaxz-1));
+        cu.executeKernel(calcEwaldRecForceKernel, args_rec2, numParticles);
 
         int paddedNumAtoms = cu.getPaddedNumAtoms();
         CudaNonbondedUtilities& nb = cu.getNonbondedUtilities();
