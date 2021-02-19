@@ -489,6 +489,13 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         };
         cu.executeKernel(calcEwaldRecEnerKernel, args_rec1, (2*kmaxx-1)*(2*kmaxy-1)*(2*kmaxz-1));
 
+        int paddedNumAtoms = cu.getPaddedNumAtoms();
+        CudaNonbondedUtilities& nb = cu.getNonbondedUtilities();
+        int startTileIndex = nb.getStartTileIndex();
+        int numTileIndices = nb.getNumTiles();
+        unsigned int maxTiles = nb.getInteractingTiles().getSize();
+        int maxSinglePairs = nb.getSinglePairs().getSize();
+
         void* args_rec2[] = {
             &cu.getForce().getDevicePointer(),
             &dedq.getDevicePointer(),
@@ -500,12 +507,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         };
         cu.executeKernel(calcEwaldRecForceKernel, args_rec2, numParticles*nb.getForceThreadBlockSize() , nb.getForceThreadBlockSize());
 
-        int paddedNumAtoms = cu.getPaddedNumAtoms();
-        CudaNonbondedUtilities& nb = cu.getNonbondedUtilities();
-        int startTileIndex = nb.getStartTileIndex();
-        int numTileIndices = nb.getNumTiles();
-        unsigned int maxTiles = nb.getInteractingTiles().getSize();
-        int maxSinglePairs = nb.getSinglePairs().getSize();
+
 
         void* args[] = {
             &cu.getForce().getDevicePointer(),                      // unsigned long long*       __restrict__     forceBuffers, 
