@@ -924,11 +924,11 @@ extern "C" __global__ void computeEwaldRecForce(
                     // real sinsum = cosSinSums[index*2+1]*ak;
                     real cossum = cosSinSums[index*2];
                     real sinsum = cosSinSums[index*2+1];
-                    real dEdR = apos.w*(cossum*structureFactor.y - sinsum*structureFactor.x);
+                    real dEdR = ak*apos.w*(cossum*structureFactor.y - sinsum*structureFactor.x);
                     force.x += dEdR*kx;
                     force.y += dEdR*ky;
                     force.z += dEdR*kz;
-                    dedqv += cossum*structureFactor.x + sinsum*structureFactor.y;
+                    dedqv += ak*(cossum*structureFactor.x + sinsum*structureFactor.y);
 
                     lowrz = 1 - KMAX_Z;
                 }
