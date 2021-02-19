@@ -419,7 +419,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         CUmodule PBCModule = cu.createModule(CudaKernelSources::vectorOps + CudaCoulKernelSources::PBCForce, pbcDefines);
         calcEwaldSelfEnerKernel = cu.getKernel(PBCModule, "computeEwaldSelfEner");
         calcEwaldRecEnerKernel = cu.getKernel(PBCModule, "computeEwaldRecEner");
-        calcEwaldRecForceKernel = cu.getKernel(PBCModule, "computeEwaldRecForce");
+        calcEwaldRecForceKernel = cu.getKernel(PBCModule, "computeEwaldRecForce2");
         calcEwaldRealKernel = cu.getKernel(PBCModule, "computeNonbonded");
         calcEwaldExclusionsKernel = cu.getKernel(PBCModule, "computeExclusion");
         indexAtomKernel = cu.getKernel(PBCModule, "genIndexAtom");
