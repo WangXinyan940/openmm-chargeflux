@@ -895,8 +895,8 @@ extern "C" __global__ void computeEwaldRecForce(
     unsigned int atom = blockIdx.x;
     real3 reciprocalBoxSize = make_real3(2*M_PI*invPeriodicBoxSize.x, 2*M_PI*invPeriodicBoxSize.y, 2*M_PI*invPeriodicBoxSize.z);
     real reciprocalCoefficient = ONE_4PI_EPS0*4*M_PI*(invPeriodicBoxSize.x*invPeriodicBoxSize.y*invPeriodicBoxSize.z);
-    __shared__ real3 sharedforce[THREAD_BLOCK_SIZE];
-    __shared__ real shareddedqv[THREAD_BLOCK_SIZE];
+    __shared__ real3 sharedforce[EWALDFORCEBLOCK];
+    __shared__ real shareddedqv[EWALDFORCEBLOCK];
     sharedforce[threadIdx.x] = make_real3(0);
     shareddedqv[threadIdx.x] = 0;
 
@@ -916,8 +916,8 @@ extern "C" __global__ void computeEwaldRecForce(
                 real phase2 = phase1 + apos.y*ky;
                 for (int rz = lowrz; rz < KMAX_Z; rz++) {
                     int index = rx*KSIZEYZ + (ry+KMAX_Y-1)*KSIZEZ + (rz+KMAX_Z-1);
-                    int nblock = index / THREAD_BLOCK_SIZE;
-                    int remainder = index - nblock * THREAD_BLOCK_SIZE;
+                    int nblock = index / EWALDFORCEBLOCK;
+                    int remainder = index - nblock * EWALDFORCEBLOCK;
                     if (remainder == threadIdx.x){
                         real kz = rz*reciprocalBoxSize.z;
                         // Compute the force contribution of this wave vector.
@@ -943,7 +943,7 @@ extern "C" __global__ void computeEwaldRecForce(
         if (threadIdx.x == 0){
             real3 forcesum = make_real3(0);
             real dedqsum = 0;
-            for(int ii=0;ii<THREAD_BLOCK_SIZE;ii++){
+            for(int ii=0;ii<EWALDFORCEBLOCK;ii++){
                 forcesum += sharedforce[ii];
                 dedqsum += shareddedqv[ii];
             }

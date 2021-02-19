@@ -64,6 +64,7 @@ private:
     double cutoff;
     std::vector<std::vector<int>> exclusions;
     int numexclusions;
+    int ewaldForceBlock;
     double ewaldTol, alpha, one_alpha2;
     double selfEwaldEnergy;
     bool ifPBC;
