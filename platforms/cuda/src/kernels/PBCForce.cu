@@ -895,8 +895,8 @@ extern "C" __global__ void computeEwaldRecForce(
     unsigned int atom = blockIdx.x;
     real3 reciprocalBoxSize = make_real3(2*M_PI*invPeriodicBoxSize.x, 2*M_PI*invPeriodicBoxSize.y, 2*M_PI*invPeriodicBoxSize.z);
     real reciprocalCoefficient = ONE_4PI_EPS0*4*M_PI*(invPeriodicBoxSize.x*invPeriodicBoxSize.y*invPeriodicBoxSize.z);
-    // __shared__ real3 sharedforce[EWALDFORCEBLOCK];
-    // __shared__ real shareddedqv[EWALDFORCEBLOCK];
+    __shared__ real3 sharedforce[EWALDFORCEBLOCK];
+    __shared__ real shareddedqv[EWALDFORCEBLOCK];
 
     while (atom < NUM_ATOMS) {
         real3 force = make_real3(0);
@@ -936,13 +936,13 @@ extern "C" __global__ void computeEwaldRecForce(
                 lowry = 1 - KMAX_Y;
             }
         }
-        if (threadIdx.x ==0){
+        // if (threadIdx.x ==0){
             // atomicAdd(&forceBuffers[atom], static_cast<unsigned long long>((long long) (force.x*0x100000000)));
             // atomicAdd(&forceBuffers[atom+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (force.y*0x100000000)));
             // atomicAdd(&forceBuffers[atom+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (force.z*0x100000000)));
             // atomicAdd(&dedq[atomIndex[atom]], dedqv);
 
-        }
+        // }
 
         sharedforce[threadIdx.x] = force;
         shareddedqv[threadIdx.x] = dedqv;
