@@ -977,7 +977,7 @@ extern "C" __global__ void computeEwaldRecForce2(
         real ky = ry*reciprocalBoxSize.y;
         real kz = rz*reciprocalBoxSize.z;
         real k2 = kx*kx + ky*ky + kz*kz;
-        real ak = EXP(k2*EXP_COEFFICIENT)/k2;
+        real ak = EXP(k2*EXP_COEFFICIENT)/k2*reciprocalCoefficient*2;
         real cossum = cosSinSums[index*2];
         real sinsum = cosSinSums[index*2+1];
         for (int atom = 0; atom < NUM_ATOMS; atom++) {
@@ -985,8 +985,8 @@ extern "C" __global__ void computeEwaldRecForce2(
             real costmp = COS(apos.x*kx + apos.y*ky + apos.z*kz);
             real sintmp = SIN(apos.x*kx + apos.y*ky + apos.z*kz);
 
-            real dEdR = 2*reciprocalCoefficient*ak*apos.w*(cossum*sintmp - sinsum*costmp);
-            dedqv += 2*reciprocalCoefficient*ak*(cossum*structureFactor.x + sinsum*structureFactor.y);
+            real dEdR = ak*apos.w*(cossum*sintmp - sinsum*costmp);
+            real dedqv = ak*(cossum*costmp + sinsum*sintmp);
 
             atomicAdd(&forceBuffers[atom], static_cast<unsigned long long>((long long) (dEdR*kx*0x100000000)));
             atomicAdd(&forceBuffers[atom+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (dEdR*ky*0x100000000)));
