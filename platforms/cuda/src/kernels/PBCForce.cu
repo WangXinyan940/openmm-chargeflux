@@ -937,10 +937,10 @@ extern "C" __global__ void computeEwaldRecForce(
             }
         }
         if (threadIdx.x ==0){
-            atomicAdd(&forceBuffers[atom], static_cast<unsigned long long>((long long) (force.x*0x100000000)));
-            atomicAdd(&forceBuffers[atom+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (force.y*0x100000000)));
-            atomicAdd(&forceBuffers[atom+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (force.z*0x100000000)));
-            atomicAdd(&dedq[atomIndex[atom]], dedqv);
+            // atomicAdd(&forceBuffers[atom], static_cast<unsigned long long>((long long) (force.x*0x100000000)));
+            // atomicAdd(&forceBuffers[atom+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (force.y*0x100000000)));
+            // atomicAdd(&forceBuffers[atom+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (force.z*0x100000000)));
+            // atomicAdd(&dedq[atomIndex[atom]], dedqv);
         }
 
         // sharedforce[threadIdx.x] = force;
