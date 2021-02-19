@@ -944,8 +944,8 @@ extern "C" __global__ void computeEwaldRecForce(
 
         // }
 
-        sharedforce[threadIdx.x] = force;
-        shareddedqv[threadIdx.x] = dedqv;
+        // sharedforce[threadIdx.x] = force;
+        // shareddedqv[threadIdx.x] = dedqv;
         __syncthreads();
         if (threadIdx.x == 0){
             real3 forcesum = make_real3(0);
@@ -958,10 +958,10 @@ extern "C" __global__ void computeEwaldRecForce(
         //     atomicAdd(&forceBuffers[atom+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (forcesum.y*0x100000000)));
         //     atomicAdd(&forceBuffers[atom+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (forcesum.z*0x100000000)));
         //     atomicAdd(&dedq[atomIndex[atom]], dedqsum);
-            // forceBuffers[atom] += static_cast<unsigned long long>((long long) (force.x*0x100000000));
-            // forceBuffers[atom+PADDED_NUM_ATOMS] += static_cast<unsigned long long>((long long) (force.y*0x100000000));
-            // forceBuffers[atom+2*PADDED_NUM_ATOMS] += static_cast<unsigned long long>((long long) (force.z*0x100000000));
-            // dedq[atomIndex[atom]] += dedqv;
+            forceBuffers[atom] += static_cast<unsigned long long>((long long) (force.x*0x100000000));
+            forceBuffers[atom+PADDED_NUM_ATOMS] += static_cast<unsigned long long>((long long) (force.y*0x100000000));
+            forceBuffers[atom+2*PADDED_NUM_ATOMS] += static_cast<unsigned long long>((long long) (force.z*0x100000000));
+            dedq[atomIndex[atom]] += dedqv;
         }
 
         // Record the force on the atom.
