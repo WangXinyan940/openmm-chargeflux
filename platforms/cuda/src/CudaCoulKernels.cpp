@@ -379,8 +379,8 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         if (kmaxz%2 == 0)
             kmaxz += 1;
 
-        int elementSize = (cu.getUseDoublePrecision() ? sizeof(double) : sizeof(float));
-        cosSinSums.initialize(cu, 2*(2*kmaxx-1)*(2*kmaxy-1)*(2*kmaxz-1), elementSize, "cosSinSums");
+        int elementSize = (cu.getUseDoublePrecision() ? sizeof(double2) : sizeof(float2));
+        cosSinSums.initialize(cu, (2*kmaxx-1)*(2*kmaxy-1)*(2*kmaxz-1), elementSize, "cosSinSums");
 
         map<string, string> pbcDefines;
         pbcDefines["NUM_ATOMS"] = cu.intToString(numParticles);

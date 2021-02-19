@@ -836,7 +836,7 @@ extern "C" __global__ void computeEwaldRecEner(
     mixed*                    __restrict__     energyBuffer, 
     const real4*              __restrict__     posq, 
     const int*                __restrict__     atomIndex,
-    real*                     __restrict__     cosSinSums,
+    real2*                    __restrict__     cosSinSums,
     real4                                      periodicBoxSize,
     real4                                      invPeriodicBoxSize
 ){
@@ -870,8 +870,8 @@ extern "C" __global__ void computeEwaldRecEner(
             cossum += costmp * apos.w;
             sinsum += sintmp * apos.w;
         }
-        cosSinSums[2*index] = cossum;
-        cosSinSums[2*index+1] = sinsum;
+        cosSinSums[index].x = cossum;
+        cosSinSums[index].y = sinsum;
 
         // Compute the contribution to the energy.
 
@@ -888,7 +888,7 @@ extern "C" __global__ void computeEwaldRecForce(
     real*                     __restrict__     dedq,
     const real4*              __restrict__     posq, 
     const int*                __restrict__     atomIndex,
-    const real*               __restrict__     cosSinSums, 
+    const real2*              __restrict__     cosSinSums, 
     real4                                      periodicBoxSize,
     real4                                      invPeriodicBoxSize
 ){
@@ -923,13 +923,12 @@ extern "C" __global__ void computeEwaldRecForce(
                     real2 structureFactor = make_real2(COS(phase3), SIN(phase3));
                     // real cossum = cosSinSums[index*2]*ak;
                     // real sinsum = cosSinSums[index*2+1]*ak;
-                    real cossum = cosSinSums[index*2];
-                    real sinsum = cosSinSums[index*2+1];
-                    real dEdR = ak*apos.w*(cossum*structureFactor.y - sinsum*structureFactor.x);
+                    real2 cossin = cosSinSums[index];
+                    real dEdR = ak*apos.w*(cossin.x*structureFactor.y - cossin.y*structureFactor.x);
                     force.x += dEdR*kx;
                     force.y += dEdR*ky;
                     force.z += dEdR*kz;
-                    dedqv += ak*(cossum*structureFactor.x + sinsum*structureFactor.y);
+                    dedqv += ak*(cossin.x*structureFactor.x + cossin.y*structureFactor.y);
 
                     lowrz = 1 - KMAX_Z;
                 }
