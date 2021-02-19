@@ -936,8 +936,8 @@ extern "C" __global__ void computeEwaldRecForce(
                 lowry = 1 - KMAX_Y;
             }
         }
-        // sharedforce[threadIdx.x] = force;
-        // shareddedqv[threadIdx.x] = dedqv;
+        sharedforce[threadIdx.x] = force;
+        shareddedqv[threadIdx.x] = dedqv;
         // __syncthreads();
         // if (threadIdx.x == 0){
         //     real3 forcesum = make_real3(0);
