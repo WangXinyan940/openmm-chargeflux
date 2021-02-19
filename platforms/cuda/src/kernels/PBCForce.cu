@@ -922,8 +922,8 @@ extern "C" __global__ void computeEwaldRecForce(
                     real2 structureFactor = make_real2(COS(phase3), SIN(phase3));
                     // real cossum = cosSinSums[index*2]*ak;
                     // real sinsum = cosSinSums[index*2+1]*ak;
-                    real cossum = 0.5 * ak;
-                    real sinsum = 0.5 * ak;
+                    real cossum = cosSinSums[index*2];
+                    real sinsum = cosSinSums[index*2+1];
                     real dEdR = apos.w*(cossum*structureFactor.y - sinsum*structureFactor.x);
                     force.x += dEdR*kx;
                     force.y += dEdR*ky;
