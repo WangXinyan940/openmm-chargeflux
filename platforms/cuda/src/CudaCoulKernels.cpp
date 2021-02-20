@@ -485,7 +485,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             cu.getPeriodicBoxSizePointer(),                         // real4                                      periodicBoxSize
             cu.getInvPeriodicBoxSizePointer(),                      // real4    
         };
-        cu.executeKernel(calcEwaldRecEnerKernel, args_rec1, (2*kmaxx-1)*(2*kmaxy-1)*(2*kmaxz-1));
+        cu.executeKernel(calcEwaldRecEnerKernel, args_rec1, (2*kmaxx-1)*(2*kmaxy-1)*(2*kmaxz-1), 32);
 
         int paddedNumAtoms = cu.getPaddedNumAtoms();
         CudaNonbondedUtilities& nb = cu.getNonbondedUtilities();
