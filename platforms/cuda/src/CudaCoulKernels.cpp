@@ -383,7 +383,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         pbcDefines["PADDED_NUM_ATOMS"] = cu.intToString(cu.getPaddedNumAtoms());
         pbcDefines["NUM_BLOCKS"] = cu.intToString(cu.getNumAtomBlocks());
         pbcDefines["THREAD_BLOCK_SIZE"] = cu.intToString(cu.getNonbondedUtilities().getForceThreadBlockSize());
-        ewaldForceBlock = 16;
+        ewaldForceBlock = 32;
         pbcDefines["EWALDFORCEBLOCK"] = cu.intToString(ewaldForceBlock);
         cout << "Block size: " << ewaldForceBlock << endl;
         pbcDefines["TILE_SIZE"] = cu.intToString(CudaContext::TileSize);
@@ -503,7 +503,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             cu.getPeriodicBoxSizePointer(),                         // real4                                      periodicBoxSize
             cu.getInvPeriodicBoxSizePointer()                       // real4     
         };
-        cu.executeKernel(calcEwaldRecForceKernel, args_rec2, numParticles*ewaldForceBlock , ewaldForceBlock);
+        cu.executeKernel(calcEwaldRecForceKernel, args_rec2, numParticles , ewaldForceBlock);
 
 
 
