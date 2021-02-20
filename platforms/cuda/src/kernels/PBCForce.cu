@@ -892,11 +892,11 @@ extern "C" __global__ void computeEwaldRecForce(
     real4                                      periodicBoxSize,
     real4                                      invPeriodicBoxSize
 ){
-    unsigned int atom = blockIdx.x;
+    unsigned int atom = blockIdx.x * blockDim.x + threadIdx.x;
     real3 reciprocalBoxSize = make_real3(2*M_PI*invPeriodicBoxSize.x, 2*M_PI*invPeriodicBoxSize.y, 2*M_PI*invPeriodicBoxSize.z);
     real reciprocalCoefficient = ONE_4PI_EPS0*4*M_PI*(invPeriodicBoxSize.x*invPeriodicBoxSize.y*invPeriodicBoxSize.z);
-    __shared__ real3 sharedforce[EWALDFORCEBLOCK];
-    __shared__ real shareddedqv[EWALDFORCEBLOCK];
+    // __shared__ real3 sharedforce[EWALDFORCEBLOCK];
+    // __shared__ real shareddedqv[EWALDFORCEBLOCK];
 
     while (atom < NUM_ATOMS) {
         real3 force = make_real3(0);
@@ -914,23 +914,39 @@ extern "C" __global__ void computeEwaldRecForce(
                 real phase2 = phase1 + apos.y*ky;
                 for (int rz = lowrz; rz < KMAX_Z; rz++) {
                     int index = rx*KSIZEYZ + (ry+KMAX_Y-1)*KSIZEZ + (rz+KMAX_Z-1);
-                    int nblock = index / EWALDFORCEBLOCK;
-                    int remainder = index - nblock * EWALDFORCEBLOCK;
-                    if (remainder == threadIdx.x){
-                        real kz = rz*reciprocalBoxSize.z;
-                        // Compute the force contribution of this wave vector.
-                        real k2 = kx*kx + ky*ky + kz*kz;
-                        real ak = EXP(k2*EXP_COEFFICIENT)/k2*2*reciprocalCoefficient;
-                        real phase3 = phase2 + apos.z*kz;
-                        real2 structureFactor = make_real2(COS(phase3), SIN(phase3)) * ak;
-                        real2 cossin = cosSinSums[index];
-                        // real2 cossin = make_real2(0);
-                        real dEdR = apos.w*(cossin.x*structureFactor.y - cossin.y*structureFactor.x);
-                        force.x += dEdR*kx;
-                        force.y += dEdR*ky;
-                        force.z += dEdR*kz;
-                        dedqv += cossin.x*structureFactor.x + cossin.y*structureFactor.y;
-                    }
+                    // int nblock = index / EWALDFORCEBLOCK;
+                    // int remainder = index - nblock * EWALDFORCEBLOCK;
+
+                    // if (remainder == threadIdx.x){
+                    //     real kz = rz*reciprocalBoxSize.z;
+                    //     // Compute the force contribution of this wave vector.
+                    //     real k2 = kx*kx + ky*ky + kz*kz;
+                    //     real ak = EXP(k2*EXP_COEFFICIENT)/k2*2*reciprocalCoefficient;
+                    //     real phase3 = phase2 + apos.z*kz;
+                    //     real2 structureFactor = make_real2(COS(phase3), SIN(phase3)) * ak;
+                    //     real2 cossin = cosSinSums[index];
+                    //     // real2 cossin = make_real2(0);
+                    //     real dEdR = apos.w*(cossin.x*structureFactor.y - cossin.y*structureFactor.x);
+                    //     force.x += dEdR*kx;
+                    //     force.y += dEdR*ky;
+                    //     force.z += dEdR*kz;
+                    //     dedqv += cossin.x*structureFactor.x + cossin.y*structureFactor.y;
+                    // }
+
+                    real kz = rz*reciprocalBoxSize.z;
+                    // Compute the force contribution of this wave vector.
+                    real k2 = kx*kx + ky*ky + kz*kz;
+                    real ak = EXP(k2*EXP_COEFFICIENT)/k2*2*reciprocalCoefficient;
+                    real phase3 = phase2 + apos.z*kz;
+                    real2 structureFactor = make_real2(COS(phase3), SIN(phase3)) * ak;
+                    real2 cossin = cosSinSums[index];
+                    // real2 cossin = make_real2(0);
+                    real dEdR = apos.w*(cossin.x*structureFactor.y - cossin.y*structureFactor.x);
+                    force.x += dEdR*kx;
+                    force.y += dEdR*ky;
+                    force.z += dEdR*kz;
+                    dedqv += cossin.x*structureFactor.x + cossin.y*structureFactor.y;
+
                     lowrz = 1 - KMAX_Z;
                 }
                 lowry = 1 - KMAX_Y;
@@ -944,27 +960,30 @@ extern "C" __global__ void computeEwaldRecForce(
 
         // }
 
-        sharedforce[threadIdx.x] = force;
-        shareddedqv[threadIdx.x] = dedqv;
+        // sharedforce[threadIdx.x] = force;
+        // shareddedqv[threadIdx.x] = dedqv;
         // __syncthreads();
-        if (threadIdx.x == 0){
-            real3 forcesum = make_real3(0);
-            real dedqsum = 0;
-            for(int ii=0;ii<EWALDFORCEBLOCK;ii++){
-                // forcesum += sharedforce[ii];
-                // dedqsum += shareddedqv[ii];
-            }
-        //     atomicAdd(&forceBuffers[atom], static_cast<unsigned long long>((long long) (forcesum.x*0x100000000)));
-        //     atomicAdd(&forceBuffers[atom+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (forcesum.y*0x100000000)));
-        //     atomicAdd(&forceBuffers[atom+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (forcesum.z*0x100000000)));
-        //     atomicAdd(&dedq[atomIndex[atom]], dedqsum);
-            // forceBuffers[atom] += static_cast<unsigned long long>((long long) (force.x*0x100000000));
-            // forceBuffers[atom+PADDED_NUM_ATOMS] += static_cast<unsigned long long>((long long) (force.y*0x100000000));
-            // forceBuffers[atom+2*PADDED_NUM_ATOMS] += static_cast<unsigned long long>((long long) (force.z*0x100000000));
-            // dedq[atomIndex[atom]] += dedqv;
-        }
-
+        // if (threadIdx.x == 0){
+        //     real3 forcesum = make_real3(0);
+        //     real dedqsum = 0;
+        //     for(int ii=0;ii<EWALDFORCEBLOCK;ii++){
+        //         // forcesum += sharedforce[ii];
+        //         // dedqsum += shareddedqv[ii];
+        //     }
+        // //     atomicAdd(&forceBuffers[atom], static_cast<unsigned long long>((long long) (forcesum.x*0x100000000)));
+        // //     atomicAdd(&forceBuffers[atom+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (forcesum.y*0x100000000)));
+        // //     atomicAdd(&forceBuffers[atom+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (forcesum.z*0x100000000)));
+        // //     atomicAdd(&dedq[atomIndex[atom]], dedqsum);
+        //     // forceBuffers[atom] += static_cast<unsigned long long>((long long) (force.x*0x100000000));
+        //     // forceBuffers[atom+PADDED_NUM_ATOMS] += static_cast<unsigned long long>((long long) (force.y*0x100000000));
+        //     // forceBuffers[atom+2*PADDED_NUM_ATOMS] += static_cast<unsigned long long>((long long) (force.z*0x100000000));
+        //     // dedq[atomIndex[atom]] += dedqv;
+        // }
+        forceBuffers[atom] += static_cast<unsigned long long>((long long) (force.x*0x100000000));
+        forceBuffers[atom+PADDED_NUM_ATOMS] += static_cast<unsigned long long>((long long) (force.y*0x100000000));
+        forceBuffers[atom+2*PADDED_NUM_ATOMS] += static_cast<unsigned long long>((long long) (force.z*0x100000000));
+        dedq[atomIndex[atom]] += dedqv;
         // Record the force on the atom.
-        atom += gridDim.x;
+        atom += gridDim.x * blockDim.x;
     }
 }
