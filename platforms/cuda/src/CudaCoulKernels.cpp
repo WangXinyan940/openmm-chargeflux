@@ -82,7 +82,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         for(int ii=0;ii<numParticles;ii++){
             double prm, sig, eps;
             force.getParticleParameters(ii, prm, sig, eps);
-            double4 tmp(prm, sig/2, 2*sqrt(eps), 0);
+            double4 tmp = make_double4(prm, sig/2, 2*sqrt(eps), 0);
             parameters.push_back(tmp);
         }
         parameters_cu.initialize(cu, numParticles, sizeof(double4), "parameters");
@@ -99,8 +99,8 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
                 int idx1, idx2;
                 double k, b;
                 force.getFluxBondParameters(ii, idx1, idx2, k, b);
-                int4 t1(idx1, idx2, 0, 0);
-                double2 t2(k, b);
+                int4 t1 = make_int4(idx1, idx2, 0, 0);
+                double2 t2 = make_double2(k, b);
                 cfidx.push_back(t1);
                 cfprms.push_back(t2);
             }
@@ -111,8 +111,8 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
                 int idx1, idx2, idx3;
                 double k, theta;
                 force.getFluxAngleParameters(ii, idx1, idx2, idx3, k, theta);
-                int4 t1(idx1, idx2, idx3, 0);
-                double4 t2(k, theta);
+                int4 t1 = make_int4(idx1, idx2, idx3, 0);
+                double2 t2 = make_double2(k, theta);
                 cfidx.push_back(t1);
                 cfprms.push_back(t2);
             }
@@ -128,7 +128,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         for(int ii=0;ii<numParticles;ii++){
             double prm, sig, eps;
             force.getParticleParameters(ii, prm, sig, eps);
-            float4 tmp(prm, sig/2, 2*sqrt(eps),0);
+            float4 tmp = make_float4(prm, sig/2, 2*sqrt(eps),0);
             parameters.push_back(tmp);
         }
         parameters_cu.initialize(cu, numParticles, sizeof(float4), "parameters");
@@ -146,8 +146,8 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
                 int idx1, idx2;
                 double k, b;
                 force.getFluxBondParameters(ii, idx1, idx2, k, b);
-                int4 t1(idx1, idx2, 0, 0);
-                float2 t2(k, b);
+                int4 t1 = make_int4(idx1, idx2, 0, 0);
+                float2 t2 = make_float2(k, b);
                 cfidx.push_back(t1);
                 cfprms.push_back(t2);
             }
@@ -158,8 +158,8 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
                 int idx1, idx2, idx3;
                 double k, theta;
                 force.getFluxAngleParameters(ii, idx1, idx2, idx3, k, theta);
-                int4 t1(idx1, idx2, idx3, 0);
-                float2 t2(k, theta);
+                int4 t1 = make_int4(idx1, idx2, idx3, 0);
+                float2 t2 = make_float2(k, theta);
                 cfidx.push_back(t1);
                 cfprms.push_back(t2);
             }
