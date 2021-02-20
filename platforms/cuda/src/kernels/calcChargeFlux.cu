@@ -2,17 +2,17 @@ extern "C" __global__ void copyCharge(
     real4*            __restrict__  posq,
     real*             __restrict__  dedq,
 #ifdef USE_PBC
-    const real*       __restrict__  parameters,
+    const real4*      __restrict__  parameters,
     const int*        __restrict__  indexAtom
 #else
-    const real*       __restrict__  parameters
+    const real4*      __restrict__  parameters
 #endif
 ){
     for (int natom = blockIdx.x*blockDim.x+threadIdx.x; natom < NUM_ATOMS; natom += blockDim.x*gridDim.x){
 #ifdef USE_PBC
-        posq[indexAtom[natom]].w = parameters[natom*3];
+        posq[indexAtom[natom]].w = parameters[natom].x;
 #else
-        posq[natom].w = parameters[natom*3];
+        posq[natom].w = parameters[natom].x;
 #endif
         dedq[natom] = 0;
     }
@@ -22,8 +22,8 @@ extern "C" __global__ void calcRealCharge(
     real*             __restrict__  dqdx_val,
     real4*            __restrict__  posq,
 #ifdef USE_PBC
-    const int*        __restrict__  cf_idx,
-    const real*       __restrict__  cf_params,
+    const int4*       __restrict__  cf_idx,
+    const real2*      __restrict__  cf_params,
     const int*        __restrict__  indexAtom,
     real4                           periodicBoxSize, 
     real4                           invPeriodicBoxSize, 
@@ -38,27 +38,25 @@ extern "C" __global__ void calcRealCharge(
     for (int npair = blockIdx.x*blockDim.x+threadIdx.x; npair < NUM_FLUX_BONDS + NUM_FLUX_ANGLES; npair += blockDim.x*gridDim.x){
         if (npair < NUM_FLUX_BONDS){
             // bond
-            int idx1 = cf_idx[npair*2];
-            int idx2 = cf_idx[npair*2+1];
-            real k = cf_params[npair*2];
-            real b = cf_params[npair*2+1];
+            int4 idx = cf_idx[npair];
+            real2 prm = cf_params[npair];
 #ifdef USE_PBC
-            real4 posq1 = posq[indexAtom[idx1]];
-            real4 posq2 = posq[indexAtom[idx2]];
+            real4 posq1 = posq[indexAtom[idx.x]];
+            real4 posq2 = posq[indexAtom[idx.y]];
             real3 delta = make_real3(posq2.x-posq1.x, posq2.y-posq1.y, posq2.z-posq1.z);
             APPLY_PERIODIC_TO_DELTA(delta)
 #else
-            real4 posq1 = posq[idx1];
-            real4 posq2 = posq[idx2];
+            real4 posq1 = posq[idx.x];
+            real4 posq2 = posq[idx.y];
             real3 delta = make_real3(posq2.x-posq1.x, posq2.y-posq1.y, posq2.z-posq1.z);
 #endif
             real r2 = delta.x*delta.x + delta.y*delta.y + delta.z*delta.z;
             real invR = RSQRT(r2);
             real r = r2 * invR;
-            real dq = k * (r - b);
+            real dq = prm.x * (r - prm.y);
 #ifdef USE_PBC
-            atomicAdd(&posq[indexAtom[idx1]].w, dq);
-            atomicAdd(&posq[indexAtom[idx2]].w, -dq);
+            atomicAdd(&posq[indexAtom[idx.x]].w, dq);
+            atomicAdd(&posq[indexAtom[idx.y]].w, -dq);
 #else
             atomicAdd(&posq[idx1].w, dq);
             atomicAdd(&posq[idx2].w, -dq);
@@ -68,7 +66,7 @@ extern "C" __global__ void calcRealCharge(
             int pair2 = 3 * (4 * npair + 1);
             int pair3 = 3 * (4 * npair + 2);
             int pair4 = 3 * (4 * npair + 3);
-            real constant = k * invR;
+            real constant = prm.x * invR;
             real3 val = constant * delta;
             atomicAdd(&dqdx_val[pair1], -val.x);
             atomicAdd(&dqdx_val[pair2],  val.x);
@@ -85,15 +83,12 @@ extern "C" __global__ void calcRealCharge(
         } else {
             // angle
             int pidx = npair - NUM_FLUX_BONDS;
-            int idx1 = cf_idx[PSHIFT2+pidx*3];
-            int idx2 = cf_idx[PSHIFT2+pidx*3+1];
-            int idx3 = cf_idx[PSHIFT2+pidx*3+2];
-            real k = cf_params[PSHIFT2+pidx*2];
-            real theta = cf_params[PSHIFT2+pidx*2+1];
+            int4 idx = cf_idx[npair];
+            real2 prm = cf_params[npair];
 #ifdef USE_PBC
-            real4 posq1 = posq[indexAtom[idx1]];
-            real4 posq2 = posq[indexAtom[idx2]];
-            real4 posq3 = posq[indexAtom[idx3]];
+            real4 posq1 = posq[indexAtom[idx.x]];
+            real4 posq2 = posq[indexAtom[idx.y]];
+            real4 posq3 = posq[indexAtom[idx.z]];
             real3 d21 = make_real3(posq1.x-posq2.x, posq1.y-posq2.y, posq1.z-posq2.z);
             APPLY_PERIODIC_TO_DELTA(d21)
             real3 d23 = make_real3(posq3.x-posq2.x, posq3.y-posq2.y, posq3.z-posq2.z);
@@ -101,9 +96,9 @@ extern "C" __global__ void calcRealCharge(
             real3 d13 = make_real3(posq3.x-posq1.x, posq3.y-posq1.y, posq3.z-posq1.z);
             APPLY_PERIODIC_TO_DELTA(d13)
 #else
-            real4 posq1 = posq[idx1];
-            real4 posq2 = posq[idx2];
-            real4 posq3 = posq[idx3];
+            real4 posq1 = posq[idx.x];
+            real4 posq2 = posq[idx.y];
+            real4 posq3 = posq[idx.z];
             real3 d21 = make_real3(posq1.x-posq2.x, posq1.y-posq2.y, posq1.z-posq2.z);
             real3 d23 = make_real3(posq3.x-posq2.x, posq3.y-posq2.y, posq3.z-posq2.z);
             real3 d13 = make_real3(posq3.x-posq1.x, posq3.y-posq1.y, posq3.z-posq1.z);
@@ -123,15 +118,15 @@ extern "C" __global__ void calcRealCharge(
             real cost = (r23_2 + r21_2 - r13_2) * 0.5 * invR21 * invR23;
             real angle = ACOS(cost);
 
-            real dq = k * (angle - theta);
+            real dq = prm.x * (angle - prm.y);
 #ifdef USE_PBC
-            atomicAdd(&posq[indexAtom[idx1]].w, dq);
-            atomicAdd(&posq[indexAtom[idx3]].w, dq);
-            atomicAdd(&posq[indexAtom[idx2]].w, -2 * dq);
+            atomicAdd(&posq[indexAtom[idx.x]].w, dq);
+            atomicAdd(&posq[indexAtom[idx.y]].w, dq);
+            atomicAdd(&posq[indexAtom[idx.z]].w, -2 * dq);
 #else
-            atomicAdd(&posq[idx1].w, dq);
-            atomicAdd(&posq[idx3].w, dq);
-            atomicAdd(&posq[idx2].w, -2 * dq);
+            atomicAdd(&posq[idx.x].w, dq);
+            atomicAdd(&posq[idx.y].w, dq);
+            atomicAdd(&posq[idx.z].w, -2 * dq);
 #endif
 
             int pair1 = 3 * (PSHIFT4 + 9 * pidx);

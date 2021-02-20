@@ -89,7 +89,7 @@ extern "C" __global__ void computeNonbonded(
         real*                     __restrict__     dedq,
         const real4*              __restrict__     posq, 
         const int*                __restrict__     atomIndex,
-        const real*               __restrict__     parameters,
+        const real4*              __restrict__     parameters,
         const tileflags*          __restrict__     exclusions,
         const int2*               __restrict__     exclusionTiles, 
         unsigned int                               startTileIndex, 
@@ -132,13 +132,14 @@ extern "C" __global__ void computeNonbonded(
         real4 posq1 = posq[atom1];
         
         // LOAD_ATOM1_PARAMETERS
+        real4 prm = parameters[atomIndex[atom1]];
         AtomData atomData1;
         atomData1.x = posq1.x;
         atomData1.y = posq1.y;
         atomData1.z = posq1.z;
         atomData1.q = posq1.w;
-        atomData1.sig = parameters[atomIndex[atom1]*3+1];
-        atomData1.eps = parameters[atomIndex[atom1]*3+2];
+        atomData1.sig = prm.y;
+        atomData1.eps = prm.z;
         atomData1.dedq = 0;
 
 #ifdef USE_EXCLUSIONS
@@ -228,7 +229,7 @@ extern "C" __global__ void computeNonbonded(
             // This is an off-diagonal tile.
             unsigned int j = y*TILE_SIZE + tgx;
             real4 shflPosq = posq[j];
-
+            real4 prm = parameters[atomIndex[j]];
             localData[threadIdx.x].x = shflPosq.x;
             localData[threadIdx.x].y = shflPosq.y;
             localData[threadIdx.x].z = shflPosq.z;
@@ -236,8 +237,8 @@ extern "C" __global__ void computeNonbonded(
             localData[threadIdx.x].fy = 0.0f;
             localData[threadIdx.x].fz = 0.0f;
             localData[threadIdx.x].q = shflPosq.w;
-            localData[threadIdx.x].sig = parameters[atomIndex[j]*3+1];
-            localData[threadIdx.x].eps = parameters[atomIndex[j]*3+2];
+            localData[threadIdx.x].sig = prm.y;
+            localData[threadIdx.x].eps = prm.z;
             localData[threadIdx.x].dedq = 0;
 
             
@@ -415,15 +416,15 @@ extern "C" __global__ void computeNonbonded(
             unsigned int atom1 = x*TILE_SIZE + tgx;
             // Load atom data for this tile.
             real4 posq1 = posq[atom1];
-
+            real4 prm = parameters[atomIndex[atom1]];
             // LOAD_ATOM1_PARAMETERS
             AtomData atomData1;
             atomData1.x = posq1.x;
             atomData1.y = posq1.y;
             atomData1.z = posq1.z;
             atomData1.q = posq1.w;
-            atomData1.sig = parameters[3*atomIndex[atom1]+1];
-            atomData1.eps = parameters[3*atomIndex[atom1]+2];
+            atomData1.sig = prm.y;
+            atomData1.eps = prm.z;
 
             //const unsigned int localAtomIndex = threadIdx.x;
 #ifdef USE_CUTOFF
@@ -435,16 +436,18 @@ extern "C" __global__ void computeNonbonded(
 
             if (j < PADDED_NUM_ATOMS) {
                 // Load position of atom j from from global memory
+                real4 posq1 = posq[j];
+                real4 prm = parameters[atomIndex[j]];
 
-                localData[threadIdx.x].x = posq[j].x;
-                localData[threadIdx.x].y = posq[j].y;
-                localData[threadIdx.x].z = posq[j].z;
+                localData[threadIdx.x].x = posq1.x;
+                localData[threadIdx.x].y = posq1.y;
+                localData[threadIdx.x].z = posq1.z;
                 localData[threadIdx.x].fx = 0.0f;
                 localData[threadIdx.x].fy = 0.0f;
                 localData[threadIdx.x].fz = 0.0f;
-                localData[threadIdx.x].q = posq[j].w;
-                localData[threadIdx.x].sig = parameters[3*atomIndex[j]+1];
-                localData[threadIdx.x].eps = parameters[3*atomIndex[j]+2];
+                localData[threadIdx.x].q = posq1.w;
+                localData[threadIdx.x].sig = prm.y;
+                localData[threadIdx.x].eps = prm.z;
                 localData[threadIdx.x].dedq = 0;
                 
             }
@@ -664,6 +667,8 @@ extern "C" __global__ void computeNonbonded(
         int atom2 = pair.y;
         real4 posq1 = posq[atom1];
         real4 posq2 = posq[atom2];
+        real4 prm1 = parameters[atomIndex[atom1]];
+        real4 prm2 = parameters[atomIndex[atom2]];
 
         // LOAD_ATOM1_PARAMETERS
         AtomData atomData1;
@@ -671,8 +676,8 @@ extern "C" __global__ void computeNonbonded(
         atomData1.y = posq1.y;
         atomData1.z = posq1.z;
         atomData1.q = posq1.w;
-        atomData1.sig = parameters[3*atomIndex[atom1]+1];
-        atomData1.eps = parameters[3*atomIndex[atom1]+2];
+        atomData1.sig = prm1.y;
+        atomData1.eps = prm1.z;
         
         int j = atom2;
         // atom2 = threadIdx.x;
@@ -683,8 +688,8 @@ extern "C" __global__ void computeNonbonded(
         atomData2.y = posq2.y;
         atomData2.z = posq2.z;
         atomData2.q = posq2.w;
-        atomData2.sig = parameters[3*atomIndex[atom2]+1];
-        atomData2.eps = parameters[3*atomIndex[atom2]+2];
+        atomData2.sig = prm2.y;
+        atomData2.eps = prm2.z;
         
         // atom2 = pair.y;
         real3 delta = make_real3(posq2.x-posq1.x, posq2.y-posq1.y, posq2.z-posq1.z);
@@ -752,7 +757,7 @@ extern "C" __global__ void computeExclusion(
     const real4*              __restrict__     posq, 
     const int*                __restrict__     atomIndex,
     const int*                __restrict__     indexAtom,
-    const real*               __restrict__     parameters,
+    const real4*              __restrict__     parameters,
     const int*                __restrict__     exclusionidx1,
     const int*                __restrict__     exclusionidx2,
     const int                                  numExclusions,
@@ -779,12 +784,13 @@ extern "C" __global__ void computeExclusion(
         // real alphaR = EWALD_ALPHA * r;
         if (r < CUTOFF){
             real ener1 = ONE_4PI_EPS0 * c1c2 * invR;
-
-            real sig = parameters[p1*3+1] + parameters[p2*3+1];
+            real4 prm1 = parameters[p1];
+            real4 prm2 = parameters[p2];
+            real sig = prm1.y + prm2.y;
             real sig2 = invR * sig;
             sig2 *= sig2;
             real sig6 = sig2 * sig2 * sig2;
-            real epssig6 = parameters[p1*3+2] * parameters[p2*3+2] * sig6;
+            real epssig6 = prm1.z * prm2.z * sig6;
             real ener2 = epssig6 * (sig6 - 1);
 
             atomicAdd(&energyBuffer[npair], -ener1-ener2);
@@ -914,31 +920,13 @@ extern "C" __global__ void computeEwaldRecForce(
                 real phase2 = phase1 + apos.y*ky;
                 for (int rz = lowrz; rz < KMAX_Z; rz++) {
                     int index = rx*KSIZEYZ + (ry+KMAX_Y-1)*KSIZEZ + (rz+KMAX_Z-1);
-                    // int nblock = index / EWALDFORCEBLOCK;
-                    // int remainder = index - nblock * EWALDFORCEBLOCK;
-
-                    // if (remainder == threadIdx.x){
-                    //     real kz = rz*reciprocalBoxSize.z;
-                    //     // Compute the force contribution of this wave vector.
-                    //     real k2 = kx*kx + ky*ky + kz*kz;
-                    //     real ak = EXP(k2*EXP_COEFFICIENT)/k2*2*reciprocalCoefficient;
-                    //     real phase3 = phase2 + apos.z*kz;
-                    //     real2 structureFactor = make_real2(COS(phase3), SIN(phase3)) * ak;
-                    //     real2 cossin = cosSinSums[index];
-                    //     // real2 cossin = make_real2(0);
-                    //     real dEdR = apos.w*(cossin.x*structureFactor.y - cossin.y*structureFactor.x);
-                    //     force.x += dEdR*kx;
-                    //     force.y += dEdR*ky;
-                    //     force.z += dEdR*kz;
-                    //     dedqv += cossin.x*structureFactor.x + cossin.y*structureFactor.y;
-                    // }
 
                     real kz = rz*reciprocalBoxSize.z;
                     // Compute the force contribution of this wave vector.
                     real k2 = kx*kx + ky*ky + kz*kz;
-                    // real ak = EXP(k2*EXP_COEFFICIENT)/k2*2*reciprocalCoefficient;
+                    real ak = EXP(k2*EXP_COEFFICIENT)/k2*2*reciprocalCoefficient;
                     real phase3 = phase2 + apos.z*kz;
-                    real2 structureFactor = make_real2(COS(phase3), SIN(phase3)); //  * ak;
+                    real2 structureFactor = make_real2(COS(phase3), SIN(phase3)) * ak;
                     real2 cossin = cosSinSums[index];
                     // real2 cossin = make_real2(0);
                     real dEdR = apos.w*(cossin.x*structureFactor.y - cossin.y*structureFactor.x);
@@ -952,33 +940,7 @@ extern "C" __global__ void computeEwaldRecForce(
                 lowry = 1 - KMAX_Y;
             }
         }
-        // if (threadIdx.x ==0){
-            // atomicAdd(&forceBuffers[atom], static_cast<unsigned long long>((long long) (force.x*0x100000000)));
-            // atomicAdd(&forceBuffers[atom+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (force.y*0x100000000)));
-            // atomicAdd(&forceBuffers[atom+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (force.z*0x100000000)));
-            // atomicAdd(&dedq[atomIndex[atom]], dedqv);
 
-        // }
-
-        // sharedforce[threadIdx.x] = force;
-        // shareddedqv[threadIdx.x] = dedqv;
-        // __syncthreads();
-        // if (threadIdx.x == 0){
-        //     real3 forcesum = make_real3(0);
-        //     real dedqsum = 0;
-        //     for(int ii=0;ii<EWALDFORCEBLOCK;ii++){
-        //         // forcesum += sharedforce[ii];
-        //         // dedqsum += shareddedqv[ii];
-        //     }
-        // //     atomicAdd(&forceBuffers[atom], static_cast<unsigned long long>((long long) (forcesum.x*0x100000000)));
-        // //     atomicAdd(&forceBuffers[atom+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (forcesum.y*0x100000000)));
-        // //     atomicAdd(&forceBuffers[atom+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (forcesum.z*0x100000000)));
-        // //     atomicAdd(&dedq[atomIndex[atom]], dedqsum);
-        //     // forceBuffers[atom] += static_cast<unsigned long long>((long long) (force.x*0x100000000));
-        //     // forceBuffers[atom+PADDED_NUM_ATOMS] += static_cast<unsigned long long>((long long) (force.y*0x100000000));
-        //     // forceBuffers[atom+2*PADDED_NUM_ATOMS] += static_cast<unsigned long long>((long long) (force.z*0x100000000));
-        //     // dedq[atomIndex[atom]] += dedqv;
-        // }
         forceBuffers[atom] += static_cast<unsigned long long>((long long) (force.x*0x100000000));
         forceBuffers[atom+PADDED_NUM_ATOMS] += static_cast<unsigned long long>((long long) (force.y*0x100000000));
         forceBuffers[atom+2*PADDED_NUM_ATOMS] += static_cast<unsigned long long>((long long) (force.z*0x100000000));
