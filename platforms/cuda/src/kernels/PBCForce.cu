@@ -876,8 +876,7 @@ extern "C" __global__ void computeEwaldRecEner(
             cossum += costmp * apos.w;
             sinsum += sintmp * apos.w;
         }
-        cosSinSums[index].x = cossum;
-        cosSinSums[index].y = sinsum;
+        cosSinSums[index] = make_real2(cossum, sinsum);
 
         // Compute the contribution to the energy.
 
