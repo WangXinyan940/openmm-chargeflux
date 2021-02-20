@@ -138,7 +138,7 @@ extern "C" __global__ void calcRealCharge(
             int pair7 = 3 * (PSHIFT4 + 9 * pidx + 6);
             int pair8 = 3 * (PSHIFT4 + 9 * pidx + 7);
             int pair9 = 3 * (PSHIFT4 + 9 * pidx + 8);
-            real one_const = k * RSQRT(1 - cost*cost);
+            real one_const = prm.x * RSQRT(1 - cost*cost);
             real fin_const1 = invR21 * invR23 * one_const;
             real fin_const2_r21 = cost * one_const * invR21 * invR21;
             real fin_const2_r23 = cost * one_const * invR23 * invR23;
