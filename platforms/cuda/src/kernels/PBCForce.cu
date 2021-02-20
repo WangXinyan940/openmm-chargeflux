@@ -876,8 +876,7 @@ extern "C" __global__ void computeEwaldRecEner(
             cossum += costmp * apos.w;
             sinsum += sintmp * apos.w;
         }
-        cosSinSums[index].x = cossum;
-        cosSinSums[index].y = sinsum;
+        cosSinSums[index] = make_real2(cossum, sinsum);
 
         // Compute the contribution to the energy.
 
@@ -922,10 +921,10 @@ extern "C" __global__ void computeEwaldRecForce(
                     int index = rx*KSIZEYZ + (ry+KMAX_Y-1)*KSIZEZ + (rz+KMAX_Z-1);
 
                     real kz = rz*reciprocalBoxSize.z;
+                    real phase3 = phase2 + apos.z*kz;
                     // Compute the force contribution of this wave vector.
                     real k2 = kx*kx + ky*ky + kz*kz;
                     real ak = EXP(k2*EXP_COEFFICIENT)/k2*2*reciprocalCoefficient;
-                    real phase3 = phase2 + apos.z*kz;
                     real2 structureFactor = make_real2(COS(phase3), SIN(phase3)) * ak;
                     real2 cossin = cosSinSums[index];
                     // real2 cossin = make_real2(0);
