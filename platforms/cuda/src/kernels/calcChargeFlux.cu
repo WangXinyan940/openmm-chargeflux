@@ -48,7 +48,7 @@ extern "C" __global__ void calcRealCharge(
     for (int npair = blockIdx.x*blockDim.x+threadIdx.x; npair < NUM_FLUX_BONDS + NUM_FLUX_ANGLES + NUM_FLUX_WATERS; npair += blockDim.x*gridDim.x){
         if (npair < NUM_FLUX_BONDS){
             // bond
-            int4 idx = cf_idx[npair]
+            int4 idx = cf_idx[npair];
             real2 prm = cf_params[npair];
 #ifdef USE_PBC
             real4 posq1 = posq[indexAtom[idx.x]];
