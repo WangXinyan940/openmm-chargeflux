@@ -174,49 +174,51 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
     }
 
     numFluxWaters = force.getNumFluxWaters();
-    cw_idx.initialize(cu, numFluxWaters, sizeof(int4), "cwidx");
-    elementSize = cu.getUseDoublePrecision() ? sizeof(double) : sizeof(float);
-    cw_params.initialize(cu, numFluxWaters*5, elementSize, "cwparams");
-    if (cu.getUseDoublePrecision()){
-        vector<int4> cwidx;
-        cwidx.resize(0);
-        vector<double> cwprms;
-        cwprms.resize(0);
-        for(int ii=0;ii<numFluxWaters;ii++){
-            int p1, p2, p3;
-            double k1, k2, kub, b0, ub0;
-            force.getFluxWaterParameters(ii, p1, p2, p3, k1, k2, kub, b0, ub0);
-            int4 t1 = make_int4(p1, p2, p3, 0);
-            cwidx.push_back(t1);
-            cwprms.push_back(k1);
-            cwprms.push_back(k2);
-            cwprms.push_back(kub);
-            cwprms.push_back(b0);
-            cwprms.push_back(ub0);
+    if (numFluxWaters > 0){
+        cw_idx.initialize(cu, numFluxWaters, sizeof(int4), "cwidx");
+        elementSize = cu.getUseDoublePrecision() ? sizeof(double) : sizeof(float);
+        cw_params.initialize(cu, numFluxWaters*5, elementSize, "cwparams");
+        if (cu.getUseDoublePrecision()){
+            vector<int4> cwidx;
+            cwidx.resize(0);
+            vector<double> cwprms;
+            cwprms.resize(0);
+            for(int ii=0;ii<numFluxWaters;ii++){
+                int p1, p2, p3;
+                double k1, k2, kub, b0, ub0;
+                force.getFluxWaterParameters(ii, p1, p2, p3, k1, k2, kub, b0, ub0);
+                int4 t1 = make_int4(p1, p2, p3, 0);
+                cwidx.push_back(t1);
+                cwprms.push_back(k1);
+                cwprms.push_back(k2);
+                cwprms.push_back(kub);
+                cwprms.push_back(b0);
+                cwprms.push_back(ub0);
+            }
+            cw_idx.upload(cwidx);
+            cw_params.upload(cwprms);
+        } else {
+            vector<int4> cwidx;
+            cwidx.resize(0);
+            vector<float> cwprms;
+            cwprms.resize(0);
+            for(int ii=0;ii<numFluxWaters;ii++){
+                int p1, p2, p3;
+                double k1, k2, kub, b0, ub0;
+                force.getFluxWaterParameters(ii, p1, p2, p3, k1, k2, kub, b0, ub0);
+                int4 t1 = make_int4(p1, p2, p3, 0);
+                cwidx.push_back(t1);
+                cwprms.push_back(k1);
+                cwprms.push_back(k2);
+                cwprms.push_back(kub);
+                cwprms.push_back(b0);
+                cwprms.push_back(ub0);
+            }
+            cw_idx.upload(cwidx);
+            cw_params.upload(cwprms);
         }
-        cw_idx.upload(cwidx);
-        cw_params.upload(cwprms);
-    } else {
-        vector<int4> cwidx;
-        cwidx.resize(0);
-        vector<float> cwprms;
-        cwprms.resize(0);
-        for(int ii=0;ii<numFluxWaters;ii++){
-            int p1, p2, p3;
-            double k1, k2, kub, b0, ub0;
-            force.getFluxWaterParameters(ii, p1, p2, p3, k1, k2, kub, b0, ub0);
-            int4 t1 = make_int4(p1, p2, p3, 0);
-            cwidx.push_back(t1);
-            cwprms.push_back(k1);
-            cwprms.push_back(k2);
-            cwprms.push_back(kub);
-            cwprms.push_back(b0);
-            cwprms.push_back(ub0);
-        }
-        cw_idx.upload(cwidx);
-        cw_params.upload(cwprms);
     }
-
+    
     if (numFluxAngles + numFluxBonds + numFluxWaters > 0){
         vector<int> dqdx_dqidx_v;
         vector<int> dqdx_dxidx_v;
