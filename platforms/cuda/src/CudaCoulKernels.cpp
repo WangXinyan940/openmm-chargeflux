@@ -643,26 +643,26 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             };
             cu.executeKernel(calcEwaldExclusionsKernel, argsEx, numexclusions);
         }
-        cout << "DQDXPAIRS: " << numDqdxPairs << " " << dqdx_val.getSize() << endl;
-        if (numFluxAngles + numFluxBonds + numFluxWaters > 0){
-            void* argsPrint[] = {
-                &dqdx_dqidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dqidx,
-                &dqdx_dxidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dxidx,
-                &dqdx_val.getDevicePointer()          // const real*           __restrict__    dqdx_val
-            };
-            cu.executeKernel(printdQdXKernel, argsPrint, numDqdxPairs);
-        }
+        // cout << "DQDXPAIRS: " << numDqdxPairs << " " << dqdx_val.getSize() << endl;
+        // if (numFluxAngles + numFluxBonds + numFluxWaters > 0){
+        //     void* argsPrint[] = {
+        //         &dqdx_dqidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dqidx,
+        //         &dqdx_dxidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dxidx,
+        //         &dqdx_val.getDevicePointer()          // const real*           __restrict__    dqdx_val
+        //     };
+        //     cu.executeKernel(printdQdXKernel, argsPrint, numDqdxPairs);
+        // }
         cout << "P5" << endl;
         if (numFluxAngles + numFluxBonds + numFluxWaters > 0) {
-            // void* argsMult[] = {
-            //     &cu.getForce().getDevicePointer(),   
-            //     &dedq.getDevicePointer(),            
-            //     &indexAtom.getDevicePointer(),
-            //     &dqdx_dqidx.getDevicePointer(),      
-            //     &dqdx_dxidx.getDevicePointer(),      
-            //     &dqdx_val.getDevicePointer()         
-            // };
-            // cu.executeKernel(multdQdXKernel, argsMult, numDqdxPairs);
+            void* argsMult[] = {
+                &cu.getForce().getDevicePointer(),   
+                &dedq.getDevicePointer(),            
+                &indexAtom.getDevicePointer(),
+                &dqdx_dqidx.getDevicePointer(),      
+                &dqdx_dxidx.getDevicePointer(),      
+                &dqdx_val.getDevicePointer()         
+            };
+            cu.executeKernel(multdQdXKernel, argsMult, numDqdxPairs);
         }
 
     } else {
