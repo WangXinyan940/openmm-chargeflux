@@ -641,13 +641,14 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             };
             cu.executeKernel(calcEwaldExclusionsKernel, argsEx, numexclusions);
         }
+        cout << "DQDXPAIRS: " << numDqdxPairs << endl;
         if (numFluxAngles + numFluxBonds + numFluxWaters > 0){
             void* argsPrint[] = {
                 &dqdx_dqidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dqidx,
                 &dqdx_dxidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dxidx,
                 &dqdx_val.getDevicePointer()          // const real*           __restrict__    dqdx_val
             };
-            cu.executeKernel(printdQdXKernel, argsPrint, 4*numFluxBonds+9*numFluxAngles);
+            cu.executeKernel(printdQdXKernel, argsPrint, numDqdxPairs);
         }
         cout << "P5" << endl;
         if (numFluxAngles + numFluxBonds + numFluxWaters > 0) {
@@ -659,7 +660,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 &dqdx_dxidx.getDevicePointer(),      
                 &dqdx_val.getDevicePointer()         
             };
-            cu.executeKernel(multdQdXKernel, argsMult, numDqdxPairs);
+            // cu.executeKernel(multdQdXKernel, argsMult, numDqdxPairs);
         }
 
     } else {
