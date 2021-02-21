@@ -520,6 +520,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
 }
 
 double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces, bool includeEnergy) {
+    cout << "In" << endl;
     int numParticles = cu.getNumAtoms();
     double energy = 0.0;
 
