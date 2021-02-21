@@ -317,7 +317,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
             vector<double3> dqdx_val_v;
 
             for(int ii=0;ii<dqdx_dqidx_v.size();ii++){
-                double3 tmp = make_double3(0);
+                double3 tmp = make_double3(0,0,0);
                 dqdx_val_v.push_back(tmp);
             }
 
@@ -328,7 +328,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
             vector<float3> dqdx_val_v;
 
             for(int ii=0;ii<dqdx_dqidx_v.size();ii++){
-                float3 tmp = make_float3(0);
+                float3 tmp = make_float3(0,0,0);
                 dqdx_val_v.push_back(tmp);
             }
 
@@ -341,14 +341,14 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         for(int ii=0;ii<numParticles;ii++){
             dedq_v.push_back(0);
         }
-        dedq.initialize(cu, dedq_v.size(), double, "dedq");
+        dedq.initialize(cu, dedq_v.size(), sizeof(double), "dedq");
         dedq.upload(dedq_v);
     } else {
         vector<float> dedq_v;
         for(int ii=0;ii<numParticles;ii++){
             dedq_v.push_back(0);
         }
-        dedq.initialize(cu, dedq_v.size(), float, "dedq");
+        dedq.initialize(cu, dedq_v.size(), sizeof(float), "dedq");
         dedq.upload(dedq_v);
     }
 
