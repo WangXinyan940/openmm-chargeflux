@@ -17,8 +17,7 @@ extern "C" __global__ void copyCharge(
             posq[nwork].w = parameters[nwork].x;
 #endif
             dedq[nwork] = 0;
-        }
-        else {
+        } else {
             int ni = nwork - NUM_ATOMS;
             dqdx_val[ni] = make_real3(0);
         }

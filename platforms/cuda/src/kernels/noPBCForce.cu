@@ -3,7 +3,7 @@ extern "C" __global__ void calcNoPBCEnForces(
     const real4*        __restrict__     posq,
     unsigned long long* __restrict__     forceBuffers,
     real*               __restrict__     dedq,
-    const real*         __restrict__     parameters,
+    const real4*        __restrict__     parameters,
     const int*          __restrict__     pairidx0,
     const int*          __restrict__     pairidx1,
     int                                  numParticles,
@@ -17,11 +17,11 @@ extern "C" __global__ void calcNoPBCEnForces(
         real inverseR = RSQRT(R2);
         real c1c2 = posq[ii].w * posq[jj].w;
 
-        real sig = parameters[3*ii+1] + parameters[3*jj+1];
+        real sig = parameters[ii].y + parameters[jj].y;
         real sig2 = inverseR * sig;
         sig2 *= sig2;
         real sig6 = sig2 * sig2 * sig2;
-        real epssig6 = parameters[3*ii+2] * parameters[3*jj+2] * sig6;
+        real epssig6 = parameters[ii].z * parameters[jj].z * sig6;
 
         real ener = ONE_4PI_EPS0 * c1c2 * inverseR + epssig6 * (sig6 - 1);
 
@@ -60,11 +60,11 @@ extern "C" __global__ void calcNoPBCExclusions(
         real inverseR = RSQRT(R2);
         real c1c2 = posq[ii].w * posq[jj].w;
 
-        real sig = parameters[3*ii+1] + parameters[3*jj+1];
+        real sig = parameters[ii].y + parameters[jj].y;
         real sig2 = inverseR * sig;
         sig2 *= sig2;
         real sig6 = sig2 * sig2 * sig2;
-        real epssig6 = parameters[3*ii+2] * parameters[3*jj+2] * sig6;
+        real epssig6 = parameters[ii].z * parameters[jj].z * sig6;
 
         real ener = ONE_4PI_EPS0 * c1c2 * inverseR + epssig6 * (sig6 - 1);
 
