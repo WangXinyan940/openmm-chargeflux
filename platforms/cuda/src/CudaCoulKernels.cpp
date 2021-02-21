@@ -544,6 +544,8 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 &cu.getPosq().getDevicePointer(),
                 &cf_idx.getDevicePointer(),
                 &cf_params.getDevicePointer(),
+                &cw_idx.getDevicePointer(),
+                &cw_params.getDevicePointer(),
                 &indexAtom.getDevicePointer(),
                 cu.getPeriodicBoxSizePointer(),      
                 cu.getInvPeriodicBoxSizePointer(),   
@@ -675,6 +677,8 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 &cu.getPosq().getDevicePointer(),
                 &cf_idx.getDevicePointer(),
                 &cf_params.getDevicePointer(),
+                &cw_idx.getDevicePointer(),
+                &cw_params.getDevicePointer()
             };
             cu.executeKernel(calcRealChargeKernel, args_realc, numFluxBonds + numFluxAngles);
         }
