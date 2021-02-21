@@ -313,6 +313,8 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
 
         dqdx_dqidx.initialize(cu, dqdx_dqidx_v.size(), sizeof(int), "dqdx_dqidx");
         dqdx_dqidx.upload(dqdx_dqidx_v);
+        dqdx_dxidx.initialize(cu, dqdx_dxidx_v.size(), sizeof(int), "dqdx_dxidx");
+        dqdx_dxidx.upload(dqdx_dxidx_v);
 
         if (cu.getUseDoublePrecision()){
 
