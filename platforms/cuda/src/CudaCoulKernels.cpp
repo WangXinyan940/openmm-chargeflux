@@ -337,7 +337,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
             dqdx_val.initialize(cu, dqdx_val_v.size(), sizeof(float3), "dqdx_val");
             dqdx_val.upload(dqdx_val_v);
         }
-        cout << "Num DQDX_PAIR: " << dqdx_val_v.size() << endl;
+        cout << "Num DQDX_PAIR: " << dqdx_val.size() << endl;
     }
     if (cu.getUseDoublePrecision()){
         vector<double> dedq_v;
