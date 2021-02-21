@@ -135,7 +135,7 @@ void CoulForce::getFluxWaterParameters(int index, int& po, int& ph1, int& ph2, d
     ub0 = fwater_params[5*index+4];
 }
 
-int CoulForce::getNumFluxWater() const {
+int CoulForce::getNumFluxWaters() const {
     return fwater_idx.size() / 3;
 }
 
