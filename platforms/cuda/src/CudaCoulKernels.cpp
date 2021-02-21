@@ -650,7 +650,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 &dqdx_dxidx.getDevicePointer(),      
                 &dqdx_val.getDevicePointer()         
             };
-            cu.executeKernel(multdQdXKernel, argsMult, 4*numFluxBonds+9*numFluxAngles);
+            cu.executeKernel(multdQdXKernel, argsMult, numDqdxPairs);
         }
         // if (numFluxAngles + numFluxBonds > 0){
         //     void* argsPrint[] = {
@@ -724,7 +724,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 &dqdx_dxidx.getDevicePointer(),      
                 &dqdx_val.getDevicePointer()         
             };
-            cu.executeKernel(multdQdXKernel, argsMult, 4*numFluxBonds+9*numFluxAngles+9*numFluxWaters);
+            cu.executeKernel(multdQdXKernel, argsMult, numDqdxPairs);
         }
         // if (numFluxAngles + numFluxBonds > 0){
         //     void* argsPrint[] = {

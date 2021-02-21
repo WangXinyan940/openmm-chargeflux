@@ -286,11 +286,9 @@ extern "C" __global__ void multdQdX(
         int p1 = dqdx_dqidx[npair];
         int p2 = dqdx_dxidx[npair];
 #endif
-        real3 nval = - dqdx_val[npair];
-        nval *= dedq[p1];
-        atomicAdd(&forceBuffers[p2], static_cast<unsigned long long>((long long) (nval.x*0x100000000)));
-        atomicAdd(&forceBuffers[p2+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (nval.y*0x100000000)));
-        atomicAdd(&forceBuffers[p2+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (nval.z*0x100000000)));
+        atomicAdd(&forceBuffers[p2], static_cast<unsigned long long>((long long) (- dedq[p1] * dqdx_val[npair].x*0x100000000)));
+        atomicAdd(&forceBuffers[p2+PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (- dedq[p1] * dqdx_val[npair].y*0x100000000)));
+        atomicAdd(&forceBuffers[p2+2*PADDED_NUM_ATOMS], static_cast<unsigned long long>((long long) (- dedq[p1] * dqdx_val[npair].z*0x100000000)));
     }
 }
 
