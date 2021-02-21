@@ -640,6 +640,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             };
             cu.executeKernel(calcEwaldExclusionsKernel, argsEx, numexclusions);
         }
+        cout << "P5" << endl;
         if (numFluxAngles + numFluxBonds + numFluxWaters > 0) {
             void* argsMult[] = {
                 &cu.getForce().getDevicePointer(),   
