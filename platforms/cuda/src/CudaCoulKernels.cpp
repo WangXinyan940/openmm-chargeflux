@@ -641,7 +641,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             };
             cu.executeKernel(calcEwaldExclusionsKernel, argsEx, numexclusions);
         }
-        cout << "DQDXPAIRS: " << numDqdxPairs << endl;
+        cout << "DQDXPAIRS: " << numDqdxPairs << " " << dqdx_val.getSize() << endl;
         if (numFluxAngles + numFluxBonds + numFluxWaters > 0){
             void* argsPrint[] = {
                 &dqdx_dqidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dqidx,
