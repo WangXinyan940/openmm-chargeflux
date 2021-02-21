@@ -122,7 +122,7 @@ public:
     /**
      * Add flux water. 
      */
-    void addFluxWaters(int po, int ph1, int ph2, double k1, double k2, double kub, double b0, double ub0);
+    void addFluxWater(int po, int ph1, int ph2, double k1, double k2, double kub, double b0, double ub0);
     /**
      * Get parameter of flux water.
      */
@@ -130,7 +130,7 @@ public:
     /**
      * Get number of flux water. 
      */
-    int getNumFluxWater() const;
+    int getNumFluxWaters() const;
 
 protected:
     OpenMM::ForceImpl* createImpl() const;
