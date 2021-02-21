@@ -113,6 +113,32 @@ int CoulForce::getNumFluxAngles() const{
     return fangle_idx.size() / 3;
 }
 
+void CoulForce::addFluxWater(int po, int ph1, int ph2, double k1, double k2, double kub, double b0, double ub0){
+    fwater_idx.push_back(po);
+    fwater_idx.push_back(ph1);
+    fwater_idx.push_back(ph2);
+    fwater_params.push_back(k1);
+    fwater_params.push_back(k2);
+    fwater_params.push_back(kub);
+    fwater_params.push_back(b0);
+    fwater_params.push_back(ub0);
+}
+
+void CoulForce::getFluxWaterParameters(int index, int& po, int& ph1, int& ph2, double& k1, double& k2, double& kub, double& b0, double& ub0) const {
+    po = fwater_idx[3*index];
+    ph1 = fwater_idx[3*index+1];
+    ph2 = fwater_idx[3*index+2];
+    k1 = fwater_params[5*index];
+    k2 = fwater_params[5*index+1];
+    kub = fwater_params[5*index+2];
+    b0 = fwater_params[5*index+3];
+    ub0 = fwater_params[5*index+4];
+}
+
+int CoulForce::getNumFluxWater() const {
+    return fwater_idx.size() / 3;
+}
+
 ForceImpl* CoulForce::createImpl() const {
     return new CoulForceImpl(*this);
 }

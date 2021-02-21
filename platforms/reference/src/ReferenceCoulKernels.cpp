@@ -160,6 +160,71 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
             dqdx_val[3*pair9+jj] = v3;
         }
     }
+    for(int ii=0;ii<numCFWaters;ii++){
+        int p1 = fwater_idx[3*ii+0];
+        int p2 = fwater_idx[3*ii+1];
+        int p3 = fwater_idx[3*ii+2];
+        double k1  = fwater_param[5*ii+0];
+        double k2  = fwater_param[5*ii+1];
+        double kub = fwater_param[5*ii+2];
+        double b0  = fwater_param[5*ii+3];
+        double ub0 = fwater_param[5*ii+4];
+        Vec3 d12,d13,d23;
+        if (!ifPBC){
+            d12 = ReferenceForce::getDeltaR(pos[p1], pos[p2]);
+            d13 = ReferenceForce::getDeltaR(pos[p1], pos[p3]);
+            d23 = ReferenceForce::getDeltaR(pos[p2], pos[p3]);
+        } else {
+            d12 = ReferenceForce::getDeltaRPeriodic(pos[p1], pos[p2], box);
+            d13 = ReferenceForce::getDeltaRPeriodic(pos[p1], pos[p3], box);
+            d23 = ReferenceForce::getDeltaRPeriodic(pos[p2], pos[p3], box);
+        }
+        double r12_2 = d12[0] * d12[0] + d12[1] * d12[1] + d12[2] * d12[2];
+        double r13_2 = d13[0] * d13[0] + d13[1] * d13[1] + d13[2] * d13[2];
+        double r23_2 = d23[0] * d23[0] + d23[1] * d23[1] + d23[2] * d23[2];
+        double r12 = sqrt(r12_2);
+        double r13 = sqrt(r13_2);
+        double r23 = sqrt(r23_2);
+        double dq2 = k1 * (r12 - b0) + k2 * (r13 - b0) + kub * (r23 - ub0);
+        double dq3 = k1 * (r13 - b0) + k2 * (r12 - b0) + kub * (r23 - ub0);
+        double dq1 = - dq2 - dq3;
+        realcharges[p1] += dq1;
+        realcharges[p2] += dq2;
+        realcharges[p3] += dq3;
+        // grad
+        Vec3 d12_n = d12 / r12;
+        Vec3 d13_n = d13 / r13;
+        Vec3 d23_n = d23 / r23;
+
+        int pair1 = 4 * numCFBonds + 9 * numCFAngles + 9 * ii;
+        int pair2 = 4 * numCFBonds + 9 * numCFAngles + 9 * ii + 1;
+        int pair3 = 4 * numCFBonds + 9 * numCFAngles + 9 * ii + 2;
+        int pair4 = 4 * numCFBonds + 9 * numCFAngles + 9 * ii + 3;
+        int pair5 = 4 * numCFBonds + 9 * numCFAngles + 9 * ii + 4;
+        int pair6 = 4 * numCFBonds + 9 * numCFAngles + 9 * ii + 5;
+        int pair7 = 4 * numCFBonds + 9 * numCFAngles + 9 * ii + 6;
+        int pair8 = 4 * numCFBonds + 9 * numCFAngles + 9 * ii + 7;
+        int pair9 = 4 * numCFBonds + 9 * numCFAngles + 9 * ii + 8;
+
+        Vec3 d12_k1 = k1 * d12_n;
+        Vec3 d12_k2 = k2 * d12_n;
+        Vec3 d13_k1 = k1 * d13_n;
+        Vec3 d13_k2 = k2 * d13_n;
+        Vec3 ubk = kub * d23_n;
+        for(int jj=0;jj<3;jj++){
+            dqdx_val[3*pair1+jj] = d12_k1[jj] + d12_k2[jj] + d13_k1[jj] + d13_k2[jj];
+            dqdx_val[3*pair2+jj] = - d12_k1[jj] - d12_k2[jj] + 2 * ubk[jj];
+            dqdx_val[3*pair3+jj] = - d13_k2[jj] - d13_k1[jj] - 2 * ubk[jj];
+
+            dqdx_val[3*pair4+jj] = - d12_k1[jj] - d13_k2[jj];
+            dqdx_val[3*pair5+jj] = d12_k1[jj] - ubk[jj];
+            dqdx_val[3*pair6+jj] = d13_k2[jj] + ubk[jj];
+
+            dqdx_val[3*pair7+jj] = - d12_k2[jj] - d13_k1[jj];
+            dqdx_val[3*pair8+jj] = d12_k2[jj] - ubk[jj];
+            dqdx_val[3*pair9+jj] = d13_k1[jj] + ubk[jj];
+        }
+    }
 }
 
 void ReferenceCalcCoulForceKernel::initialize(const System& system, const CoulForce& force) {
@@ -201,6 +266,23 @@ void ReferenceCalcCoulForceKernel::initialize(const System& system, const CoulFo
         fangle_params[2*ii+1] = theta;
     }
 
+    numCFWaters = force.getNumFluxWaters();
+    fwater_idx.resize(numCFWaters*3);
+    fwater_params.resize(numCFWaters*5);
+    for(int ii=0;ii<numCFWaters;ii++){
+        int p1, p2, p3;
+        double k1, k2, kub, b0, ub0;
+        force.getFluxWaterParameters(p1, p2, p3, k1, k2, kub, b0, ub0);
+        fwater_idx[3*ii] = p1;
+        fwater_idx[3*ii+1] = p2;
+        fwater_idx[3*ii+2] = p3;
+        fwater_params[5*ii] = k1;
+        fwater_params[5*ii+1] = k2;
+        fwater_params[5*ii+2] = kub;
+        fwater_params[5*ii+3] = b0;
+        fwater_params[5*ii+4] = ub0;
+    }
+
     for(int ii=0;ii<numCFBonds;ii++){
         int p1, p2;
         double k, b;
@@ -230,6 +312,43 @@ void ReferenceCalcCoulForceKernel::initialize(const System& system, const CoulFo
         int p1, p2, p3;
         double k, theta;
         force.getFluxAngleParameters(ii, p1, p2, p3, k, theta);
+        // p1-p1
+        dqdx_dqidx.push_back(p1);
+        dqdx_dxidx.push_back(p1);
+        // p1-p2
+        dqdx_dqidx.push_back(p1);
+        dqdx_dxidx.push_back(p2);
+        // p1-p3
+        dqdx_dqidx.push_back(p1);
+        dqdx_dxidx.push_back(p3);
+        // p2-p1
+        dqdx_dqidx.push_back(p2);
+        dqdx_dxidx.push_back(p1);
+        // p2-p2
+        dqdx_dqidx.push_back(p2);
+        dqdx_dxidx.push_back(p2);
+        // p2-p3
+        dqdx_dqidx.push_back(p2);
+        dqdx_dxidx.push_back(p3);
+        // p3-p1
+        dqdx_dqidx.push_back(p3);
+        dqdx_dxidx.push_back(p1);
+        // p3-p2
+        dqdx_dqidx.push_back(p3);
+        dqdx_dxidx.push_back(p2);
+        // p3-p3
+        dqdx_dqidx.push_back(p3);
+        dqdx_dxidx.push_back(p3);
+
+        for(int jj=0;jj<27;jj++){
+            dqdx_val.push_back(0);
+        }
+    }
+
+    for(int ii=0;ii<numCFWaters;ii++){
+        int p1, p2, p3;
+        double k1, k2, kub, b0, ub0;
+        force.getFluxWaterParameters(ii, p1, p2, p3, k1, k2, kub, b0, ub0);
         // p1-p1
         dqdx_dqidx.push_back(p1);
         dqdx_dxidx.push_back(p1);

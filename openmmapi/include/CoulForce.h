@@ -119,6 +119,18 @@ public:
      * Get number of charge-flux angle
      */
     int getNumFluxAngles() const;
+    /**
+     * Add flux water. 
+     */
+    void addFluxWater(int po, int ph1, int ph2, double k1, double k2, double kub, double b0, double ub0);
+    /**
+     * Get parameter of flux water.
+     */
+    void getFluxWaterParameters(int index, int& po, int& ph1, int& ph2, double& k1, double& k2, double& kub, double& b0, double& ub0) const;
+    /**
+     * Get number of flux water. 
+     */
+    int getNumFluxWater() const;
 
 protected:
     OpenMM::ForceImpl* createImpl() const;
@@ -130,6 +142,8 @@ private:
     std::vector<int> fangle_idx;
     std::vector<double> fangle_params;
     std::vector<double> ljparams;
+    std::vector<int> fwater_idx;
+    std::vector<double> fwater_params;
     double cutoffDistance;
     double ewaldTol;
     bool ifPBC;

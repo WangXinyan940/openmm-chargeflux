@@ -117,6 +117,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
                 cfprms.push_back(t2);
             }
         }
+        
         if (numFluxBonds + numFluxAngles > 0){
             cf_idx.initialize(cu, cfidx.size(), sizeof(int4), "cfidx");
             cf_idx.upload(cfidx);
@@ -164,7 +165,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
                 cfprms.push_back(t2);
             }
         }
-        if (numFluxBonds + numFluxAngles > 0){
+        if (numFluxBonds + numFluxAngles + numFluxWaters > 0){
             cf_idx.initialize(cu, cfidx.size(), sizeof(int4), "cfidx");
             cf_idx.upload(cfidx);
             cf_params.initialize(cu, cfprms.size(), sizeof(float2), "cfparams");
@@ -172,7 +173,51 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         }
     }
 
-    if (numFluxAngles + numFluxBonds > 0){
+    numFluxWaters = force.getNumFluxWaters();
+    cw_idx.initialize(cu, numFluxWaters, sizeof(int4), "cwidx");
+    int elementSize = cu.getUseDoublePrecision() ? sizeof(double) : sizeof(float);
+    cw_params.initialize(cu, cwprms.size(), elementSize, "cwparams");
+    if (cu.getUseDoublePrecision()){
+        vector<int4> cwidx;
+        cwidx.resize(0);
+        vector<double> cwprms;
+        cwprms.resize(0);
+        for(int ii=0;ii<numFluxWaters;ii++){
+            int p1, p2, p3;
+            double k1, k2, kub, b0, ub0;
+            force.getFluxWaterParameters(ii, p1, p2, p3, k1, k2, kub, b0, ub0);
+            int4 t1 = make_int4(p1, p2, p3, 0);
+            cwidx.push_back(t1);
+            cwprms.push_back(k1);
+            cwprms.push_back(k2);
+            cwprms.push_back(kub);
+            cwprms.push_back(b0);
+            cwprms.push_back(ub0);
+        }
+        cw_idx.upload(cwidx);
+        cw_params.upload(cwprms);
+    } else {
+        vector<int4> cwidx;
+        cwidx.resize(0);
+        vector<float> cwprms;
+        cwprms.resize(0);
+        for(int ii=0;ii<numFluxWaters;ii++){
+            int p1, p2, p3;
+            double k1, k2, kub, b0, ub0;
+            force.getFluxWaterParameters(ii, p1, p2, p3, k1, k2, kub, b0, ub0);
+            int4 t1 = make_int4(p1, p2, p3, 0);
+            cwidx.push_back(t1);
+            cwprms.push_back(k1);
+            cwprms.push_back(k2);
+            cwprms.push_back(kub);
+            cwprms.push_back(b0);
+            cwprms.push_back(ub0);
+        }
+        cw_idx.upload(cwidx);
+        cw_params.upload(cwprms);
+    }
+
+    if (numFluxAngles + numFluxBonds + numFluxWaters > 0){
         vector<int> dqdx_dqidx_v;
         vector<int> dqdx_dxidx_v;
 
@@ -231,30 +276,63 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
             dqdx_dxidx_v.push_back(p3);
         }
 
+        for(int ii=0;ii<numFluxWaters;ii++){
+            int p1, p2, p3;
+            double k1, k2, kub, b0, ub0;
+            force.getFluxWaterParameters(ii, p1, p2, p3, k1, k2, kub, b0, ub0);
+            // p1-p1
+            dqdx_dqidx_v.push_back(p1);
+            dqdx_dxidx_v.push_back(p1);
+            // p1-p2
+            dqdx_dqidx_v.push_back(p1);
+            dqdx_dxidx_v.push_back(p2);
+            // p1-p3
+            dqdx_dqidx_v.push_back(p1);
+            dqdx_dxidx_v.push_back(p3);
+            // p2-p1
+            dqdx_dqidx_v.push_back(p2);
+            dqdx_dxidx_v.push_back(p1);
+            // p2-p2
+            dqdx_dqidx_v.push_back(p2);
+            dqdx_dxidx_v.push_back(p2);
+            // p2-p3
+            dqdx_dqidx_v.push_back(p2);
+            dqdx_dxidx_v.push_back(p3);
+            // p3-p1
+            dqdx_dqidx_v.push_back(p3);
+            dqdx_dxidx_v.push_back(p1);
+            // p3-p2
+            dqdx_dqidx_v.push_back(p3);
+            dqdx_dxidx_v.push_back(p2);
+            // p3-p3
+            dqdx_dqidx_v.push_back(p3);
+            dqdx_dxidx_v.push_back(p3);
+        }
+
         dqdx_dqidx.initialize(cu, dqdx_dqidx_v.size(), sizeof(int), "dqdx_dqidx");
         dqdx_dqidx.upload(dqdx_dqidx_v);
-        dqdx_dxidx.initialize(cu, dqdx_dxidx_v.size(), sizeof(int), "dqdx_dxidx");
-        dqdx_dxidx.upload(dqdx_dxidx_v);
 
         if (cu.getUseDoublePrecision()){
 
-            vector<double> dqdx_val_v;
+            vector<double3> dqdx_val_v;
 
-            for(int ii=0;ii<dqdx_dqidx_v.size()*3;ii++){
-                dqdx_val_v.push_back(0);
+            for(int ii=0;ii<dqdx_dqidx_v.size();ii++){
+                double3 tmp = make_double3(0);
+                dqdx_val_v.push_back(tmp);
             }
 
-            dqdx_val.initialize(cu, dqdx_val_v.size(), elementSize, "dqdx_val");
+            dqdx_val.initialize(cu, dqdx_val_v.size(), sizeof(double3), "dqdx_val");
             dqdx_val.upload(dqdx_val_v);
         } else {
 
-            vector<float> dqdx_val_v;
+            vector<float3> dqdx_val_v;
 
-            for(int ii=0;ii<dqdx_dqidx_v.size()*3;ii++){
-                dqdx_val_v.push_back(0);
+            for(int ii=0;ii<dqdx_dqidx_v.size();ii++){
+                float3 tmp = make_float3(0);
+                dqdx_val_v.push_back(tmp);
             }
 
-            dqdx_val.initialize(cu, dqdx_val_v.size(), elementSize, "dqdx_val");
+            dqdx_val.initialize(cu, dqdx_val_v.size(), sizeof(float3), "dqdx_val");
             dqdx_val.upload(dqdx_val_v);
         }
     }
@@ -263,14 +341,14 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
         for(int ii=0;ii<numParticles;ii++){
             dedq_v.push_back(0);
         }
-        dedq.initialize(cu, dedq_v.size(), elementSize, "dedq");
+        dedq.initialize(cu, dedq_v.size(), double, "dedq");
         dedq.upload(dedq_v);
     } else {
         vector<float> dedq_v;
         for(int ii=0;ii<numParticles;ii++){
             dedq_v.push_back(0);
         }
-        dedq.initialize(cu, dedq_v.size(), elementSize, "dedq");
+        dedq.initialize(cu, dedq_v.size(), float, "dedq");
         dedq.upload(dedq_v);
     }
 
@@ -297,10 +375,11 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
     }
     defRealCharges["NUM_FLUX_BONDS"] = cu.intToString(numFluxBonds);
     defRealCharges["NUM_FLUX_ANGLES"] = cu.intToString(numFluxAngles);
-    defRealCharges["PSHIFT2"] = cu.intToString(numFluxBonds*2);
-    defRealCharges["PSHIFT4"] = cu.intToString(numFluxBonds*4);
+    defRealCharges["NUM_FLUX_WATERS"] = cu.intToString(numFluxWaters);
+    defRealCharges["BSHIFT"] = cu.intToString(numFluxBonds*4);
+    defRealCharges["BASHIFT"] = cu.intToString(numFluxBonds*4+numFluxAngles*9);
     defRealCharges["NUM_ATOMS"] = cu.intToString(numParticles);
-    defRealCharges["NUM_DQDX_PAIRS"] = cu.intToString(numFluxBonds * 4 + numFluxAngles * 9);
+    defRealCharges["NUM_DQDX_PAIRS"] = cu.intToString(numFluxBonds * 4 + numFluxAngles * 9 + numFluxWaters * 9);
     defRealCharges["PADDED_NUM_ATOMS"] = cu.intToString(cu.getPaddedNumAtoms());
 
     CUmodule module = cu.createModule(CudaKernelSources::vectorOps + CudaCoulKernelSources::calcChargeFlux, defRealCharges);
@@ -449,12 +528,13 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         void* argUpdateCharge[] = {
             &cu.getPosq().getDevicePointer(),
             &dedq.getDevicePointer(),
+            &dqdx_val.getDevicePointer(),
             &parameters_cu.getDevicePointer(),
             &indexAtom.getDevicePointer()
         };
         cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
 
-        if (numFluxAngles + numFluxBonds > 0){
+        if (numFluxAngles + numFluxBonds + numFluxWaters > 0){
 
             void* args_realc[] = {
                 &dqdx_val.getDevicePointer(),
@@ -555,14 +635,14 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             };
             cu.executeKernel(calcEwaldExclusionsKernel, argsEx, numexclusions);
         }
-        if (numFluxAngles + numFluxBonds > 0) {
+        if (numFluxAngles + numFluxBonds + numFluxWaters > 0) {
             void* argsMult[] = {
-                &cu.getForce().getDevicePointer(),    // unsigned long long*   __restrict__    forceBuffers, 
-                &dedq.getDevicePointer(),             // const real*           __restrict__    dedq,
+                &cu.getForce().getDevicePointer(),   
+                &dedq.getDevicePointer(),            
                 &indexAtom.getDevicePointer(),
-                &dqdx_dqidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dqidx,
-                &dqdx_dxidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dxidx,
-                &dqdx_val.getDevicePointer()          // const real*           __restrict__    dqdx_val
+                &dqdx_dqidx.getDevicePointer(),      
+                &dqdx_dxidx.getDevicePointer(),      
+                &dqdx_val.getDevicePointer()         
             };
             cu.executeKernel(multdQdXKernel, argsMult, 4*numFluxBonds+9*numFluxAngles);
         }
@@ -578,11 +658,12 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         void* argUpdateCharge[] = {
             &cu.getPosq().getDevicePointer(), 
             &dedq.getDevicePointer(),
+            &dqdx_val.getDevicePointer(),
             &parameters_cu.getDevicePointer()
         };
         cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
 
-        if (numFluxAngles + numFluxBonds > 0){
+        if (numFluxAngles + numFluxBonds + numFluxWaters > 0){
 
             void* args_realc[] = {
                 &dqdx_val.getDevicePointer(),
@@ -621,13 +702,13 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             };
             cu.executeKernel(calcNoPBCExclusionsKernel, args2, numexclusions);
         }
-        if (numFluxAngles + numFluxBonds > 0) {
+        if (numFluxAngles + numFluxBonds + numFluxWaters > 0) {
             void* argsMult[] = {
-                &cu.getForce().getDevicePointer(),    // unsigned long long*   __restrict__    forceBuffers, 
-                &dedq.getDevicePointer(),             // const real*           __restrict__    dedq,
-                &dqdx_dqidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dqidx,
-                &dqdx_dxidx.getDevicePointer(),       // const int*            __restrict__    dqdx_dxidx,
-                &dqdx_val.getDevicePointer()          // const real*           __restrict__    dqdx_val
+                &cu.getForce().getDevicePointer(),   
+                &dedq.getDevicePointer(),            
+                &dqdx_dqidx.getDevicePointer(),      
+                &dqdx_dxidx.getDevicePointer(),      
+                &dqdx_val.getDevicePointer()         
             };
             cu.executeKernel(multdQdXKernel, argsMult, 4*numFluxBonds+9*numFluxAngles);
         }

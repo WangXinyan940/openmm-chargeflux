@@ -44,6 +44,8 @@ private:
     OpenMM::CudaArray indexAtom;
     OpenMM::CudaArray cf_idx;
     OpenMM::CudaArray cf_params;
+    OpenMM::CudaArray cw_idx;
+    OpenMM::CudaArray cw_params;
     OpenMM::CudaContext& cu;
     OpenMM::CudaArray dedq;
     OpenMM::CudaArray dqdx_dqidx;
@@ -70,7 +72,7 @@ private:
     bool ifPBC;
     int kmaxx, kmaxy, kmaxz;
     double selfenergy;
-    int numFluxBonds, numFluxAngles;
+    int numFluxBonds, numFluxAngles, numFluxWaters;
 };
 
 } // namespace CoulPlugin

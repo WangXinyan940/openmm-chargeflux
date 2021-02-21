@@ -50,10 +50,14 @@ private:
     std::vector<double> fbond_params;
     int numCFAngles;
     std::vector<int> fangle_idx;
+    std::vector<double> fangle_params;
+    int numCFWaters;
+    std::vector<int> fwater_idx;
+    std::vector<double> fwater_params;
     std::vector<int> dqdx_dqidx;
     std::vector<int> dqdx_dxidx; 
     std::vector<double> dqdx_val;
-    std::vector<double> fangle_params;
+
     OpenMM::NeighborList* neighborList;
 };
 

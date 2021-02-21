@@ -62,6 +62,7 @@ public:
     double getEwaldErrorTolerance() const;
     void addFluxBond(int p1, int p2, double k, double b);
     void addFluxAngle(int p1, int p2, int p3, double k, double theta);
+    void addFluxWater(int po, int ph1, int ph2, double k1, double k2, double kub, double b0, double ub0);
     
     %extend {
         static CoulPlugin::CoulForce& cast(OpenMM::Force& force) {
