@@ -9,7 +9,7 @@ extern "C" __global__ void calcNoPBCEnForces(
     int                                  numParticles,
     int                                  paddedNumAtoms
 ) {
-    int totpair = numParticles * (numParticles - 1) / 2
+    int totpair = numParticles * (numParticles - 1) / 2;
     for (int npair = blockIdx.x*blockDim.x+threadIdx.x; npair < totpair; npair += blockDim.x*gridDim.x) {
         int ii = pairidx0[npair];
         int jj = pairidx1[npair];
