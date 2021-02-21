@@ -1,7 +1,7 @@
 extern "C" __global__ void copyCharge(
     real4*            __restrict__  posq,
     real*             __restrict__  dedq,
-    real3*            __restrict__  dqdx_val,
+    real4*            __restrict__  dqdx_val,
 #ifdef USE_PBC
     const real4*      __restrict__  parameters,
     const int*        __restrict__  indexAtom
@@ -19,13 +19,15 @@ extern "C" __global__ void copyCharge(
             dedq[nwork] = 0;
         } else {
             int ni = nwork - NUM_ATOMS;
-            dqdx_val[ni] = make_real3(0);
+            dqdx_val[ni].x = 0;
+            dqdx_val[ni].y = 0;
+            dqdx_val[ni].z = 0;
         }
     }
 }
 
 extern "C" __global__ void calcRealCharge(
-    real3*            __restrict__  dqdx_val,
+    real4*            __restrict__  dqdx_val,
     real4*            __restrict__  posq,
 #ifdef USE_PBC
     const int4*       __restrict__  cf_idx,
@@ -255,15 +257,33 @@ extern "C" __global__ void calcRealCharge(
             real3 v2 = - v5 - v8;
             real3 v3 = - v6 - v9;
 
-            dqdx_val[pair1] += v1;
-            dqdx_val[pair2] += v2;
-            dqdx_val[pair3] += v3;
-            dqdx_val[pair4] += v4;
-            dqdx_val[pair5] += v5;
-            dqdx_val[pair6] += v6;
-            dqdx_val[pair7] += v7;
-            dqdx_val[pair8] += v8;
-            dqdx_val[pair9] += v9;
+            dqdx_val[pair1].x += v1.x;
+            dqdx_val[pair2].x += v2.x;
+            dqdx_val[pair3].x += v3.x;
+            dqdx_val[pair4].x += v4.x;
+            dqdx_val[pair5].x += v5.x;
+            dqdx_val[pair6].x += v6.x;
+            dqdx_val[pair7].x += v7.x;
+            dqdx_val[pair8].x += v8.x;
+            dqdx_val[pair9].x += v9.x;
+            dqdx_val[pair1].y += v1.y;
+            dqdx_val[pair2].y += v2.y;
+            dqdx_val[pair3].y += v3.y;
+            dqdx_val[pair4].y += v4.y;
+            dqdx_val[pair5].y += v5.y;
+            dqdx_val[pair6].y += v6.y;
+            dqdx_val[pair7].y += v7.y;
+            dqdx_val[pair8].y += v8.y;
+            dqdx_val[pair9].y += v9.y;
+            dqdx_val[pair1].z += v1.z;
+            dqdx_val[pair2].z += v2.z;
+            dqdx_val[pair3].z += v3.z;
+            dqdx_val[pair4].z += v4.z;
+            dqdx_val[pair5].z += v5.z;
+            dqdx_val[pair6].z += v6.z;
+            dqdx_val[pair7].z += v7.z;
+            dqdx_val[pair8].z += v8.z;
+            dqdx_val[pair9].z += v9.z;
         }
     }
 }
@@ -276,7 +296,7 @@ extern "C" __global__ void multdQdX(
 #endif
     const int*            __restrict__    dqdx_dqidx,
     const int*            __restrict__    dqdx_dxidx,
-    const real3*          __restrict__    dqdx_val
+    const real4*          __restrict__    dqdx_val
 ){
     for (int npair = blockIdx.x*blockDim.x+threadIdx.x; npair < NUM_DQDX_PAIRS; npair += blockDim.x*gridDim.x){
 #ifdef USE_PBC
@@ -295,7 +315,7 @@ extern "C" __global__ void multdQdX(
 extern "C" __global__ void printdQdX(
     const int*            __restrict__    dqdx_dqidx,
     const int*            __restrict__    dqdx_dxidx,
-    const real3*          __restrict__    dqdx_val
+    const real4*          __restrict__    dqdx_val
 ){
     for (int npair = blockIdx.x*blockDim.x+threadIdx.x; npair < NUM_DQDX_PAIRS; npair += blockDim.x*gridDim.x){
         real3 nval = dqdx_val[npair];
