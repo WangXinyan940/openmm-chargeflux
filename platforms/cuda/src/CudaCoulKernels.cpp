@@ -652,14 +652,14 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         }
         cout << "P5" << endl;
         if (numFluxAngles + numFluxBonds + numFluxWaters > 0) {
-            void* argsMult[] = {
-                &cu.getForce().getDevicePointer(),   
-                &dedq.getDevicePointer(),            
-                &indexAtom.getDevicePointer(),
-                &dqdx_dqidx.getDevicePointer(),      
-                &dqdx_dxidx.getDevicePointer(),      
-                &dqdx_val.getDevicePointer()         
-            };
+            // void* argsMult[] = {
+            //     &cu.getForce().getDevicePointer(),   
+            //     &dedq.getDevicePointer(),            
+            //     &indexAtom.getDevicePointer(),
+            //     &dqdx_dqidx.getDevicePointer(),      
+            //     &dqdx_dxidx.getDevicePointer(),      
+            //     &dqdx_val.getDevicePointer()         
+            // };
             // cu.executeKernel(multdQdXKernel, argsMult, numDqdxPairs);
         }
 
