@@ -218,7 +218,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
             cw_params.upload(cwprms);
         }
     }
-    
+
     if (numFluxAngles + numFluxBonds + numFluxWaters > 0){
         vector<int> dqdx_dqidx_v;
         vector<int> dqdx_dxidx_v;
@@ -382,6 +382,7 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
     defRealCharges["BASHIFT"] = cu.intToString(numFluxBonds*4+numFluxAngles*9);
     defRealCharges["NUM_ATOMS"] = cu.intToString(numParticles);
     defRealCharges["NUM_DQDX_PAIRS"] = cu.intToString(numFluxBonds * 4 + numFluxAngles * 9 + numFluxWaters * 9);
+    numDqdxPairs = numFluxBonds * 4 + numFluxAngles * 9 + numFluxWaters * 9;
     defRealCharges["PADDED_NUM_ATOMS"] = cu.intToString(cu.getPaddedNumAtoms());
 
     CUmodule module = cu.createModule(CudaKernelSources::vectorOps + CudaCoulKernelSources::calcChargeFlux, defRealCharges);
@@ -534,7 +535,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             &parameters_cu.getDevicePointer(),
             &indexAtom.getDevicePointer()
         };
-        cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
+        cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles + numDqdxPairs);
 
         if (numFluxAngles + numFluxBonds + numFluxWaters > 0){
 
@@ -657,16 +658,18 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         //     cu.executeKernel(printdQdXKernel, argsPrint, 4*numFluxBonds+9*numFluxAngles);
         // }
     } else {
+        cout << "P1" << endl;
         void* argUpdateCharge[] = {
             &cu.getPosq().getDevicePointer(), 
             &dedq.getDevicePointer(),
             &dqdx_val.getDevicePointer(),
             &parameters_cu.getDevicePointer()
         };
-        cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles);
+        cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles + numDqdxPairs);
 
+        cout << "P2" << endl;
         if (numFluxAngles + numFluxBonds + numFluxWaters > 0){
-
+            
             void* args_realc[] = {
                 &dqdx_val.getDevicePointer(),
                 &cu.getPosq().getDevicePointer(),
@@ -676,6 +679,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             cu.executeKernel(calcRealChargeKernel, args_realc, numFluxBonds + numFluxAngles);
         }
 
+        cout << "P3" << endl;
         int paddedNumAtoms = cu.getPaddedNumAtoms();
         void* args[] = {
             &cu.getEnergyBuffer().getDevicePointer(), 
@@ -689,6 +693,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         };
         cu.executeKernel(calcNoPBCEnForcesKernel, args, numParticles*(numParticles-1)/2);
 
+        cout << "P4" << endl;
         if (numexclusions > 0){
             void* args2[] = {
                 &cu.getEnergyBuffer().getDevicePointer(), 
@@ -704,6 +709,8 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             };
             cu.executeKernel(calcNoPBCExclusionsKernel, args2, numexclusions);
         }
+
+        cout << "P5" << endl;
         if (numFluxAngles + numFluxBonds + numFluxWaters > 0) {
             void* argsMult[] = {
                 &cu.getForce().getDevicePointer(),   

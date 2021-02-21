@@ -65,6 +65,7 @@ private:
     CUfunction printdQdXKernel;
     double cutoff;
     std::vector<std::vector<int>> exclusions;
+    int numDqdxPairs;
     int numexclusions;
     int ewaldForceBlock;
     double ewaldTol, alpha, one_alpha2;
