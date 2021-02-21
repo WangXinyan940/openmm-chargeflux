@@ -316,25 +316,25 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
 
         if (cu.getUseDoublePrecision()){
 
-            vector<double3> dqdx_val_v;
+            vector<double4> dqdx_val_v;
 
             for(int ii=0;ii<dqdx_dqidx_v.size();ii++){
-                double3 tmp = make_double3(0,0,0);
+                double4 tmp = make_double4(0,0,0,0);
                 dqdx_val_v.push_back(tmp);
             }
 
-            dqdx_val.initialize(cu, dqdx_val_v.size(), sizeof(double3), "dqdx_val");
+            dqdx_val.initialize(cu, dqdx_val_v.size(), sizeof(double4), "dqdx_val");
             dqdx_val.upload(dqdx_val_v);
         } else {
 
-            vector<float3> dqdx_val_v;
+            vector<float4> dqdx_val_v;
 
             for(int ii=0;ii<dqdx_dqidx_v.size();ii++){
-                float3 tmp = make_float3(0,0,0);
+                float4 tmp = make_float4(0,0,0,0);
                 dqdx_val_v.push_back(tmp);
             }
 
-            dqdx_val.initialize(cu, dqdx_val_v.size(), sizeof(float3), "dqdx_val");
+            dqdx_val.initialize(cu, dqdx_val_v.size(), sizeof(float4), "dqdx_val");
             dqdx_val.upload(dqdx_val_v);
         }
         cout << "Num DQDX_PAIR: " << dqdx_val.getSize() << endl;
