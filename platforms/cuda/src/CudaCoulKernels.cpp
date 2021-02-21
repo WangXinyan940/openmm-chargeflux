@@ -652,7 +652,6 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         //     };
         //     cu.executeKernel(printdQdXKernel, argsPrint, numDqdxPairs);
         // }
-        cout << "P5" << endl;
         if (numFluxAngles + numFluxBonds + numFluxWaters > 0) {
             void* argsMult[] = {
                 &cu.getForce().getDevicePointer(),   
@@ -666,7 +665,6 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         }
 
     } else {
-        cout << "P1" << endl;
         void* argUpdateCharge[] = {
             &cu.getPosq().getDevicePointer(), 
             &dedq.getDevicePointer(),
@@ -675,7 +673,6 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         };
         cu.executeKernel(copyChargeKernel, argUpdateCharge, numParticles + numDqdxPairs);
 
-        cout << "P2" << endl;
         if (numFluxAngles + numFluxBonds + numFluxWaters > 0){
             
             void* args_realc[] = {
@@ -689,7 +686,6 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             cu.executeKernel(calcRealChargeKernel, args_realc, numFluxBonds + numFluxAngles);
         }
 
-        cout << "P3" << endl;
         int paddedNumAtoms = cu.getPaddedNumAtoms();
         void* args[] = {
             &cu.getEnergyBuffer().getDevicePointer(), 
@@ -703,7 +699,6 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
         };
         cu.executeKernel(calcNoPBCEnForcesKernel, args, numParticles*(numParticles-1)/2);
 
-        cout << "P4" << endl;
         if (numexclusions > 0){
             void* args2[] = {
                 &cu.getEnergyBuffer().getDevicePointer(), 
@@ -720,7 +715,6 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
             cu.executeKernel(calcNoPBCExclusionsKernel, args2, numexclusions);
         }
 
-        cout << "P5" << endl;
         if (numFluxAngles + numFluxBonds + numFluxWaters > 0) {
             void* argsMult[] = {
                 &cu.getForce().getDevicePointer(),   
