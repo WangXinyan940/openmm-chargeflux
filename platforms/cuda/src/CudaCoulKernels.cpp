@@ -175,8 +175,8 @@ void CudaCalcCoulForceKernel::initialize(const System& system, const CoulForce& 
 
     numFluxWaters = force.getNumFluxWaters();
     cw_idx.initialize(cu, numFluxWaters, sizeof(int4), "cwidx");
-    int elementSize = cu.getUseDoublePrecision() ? sizeof(double) : sizeof(float);
-    cw_params.initialize(cu, cwprms.size(), elementSize, "cwparams");
+    elementSize = cu.getUseDoublePrecision() ? sizeof(double) : sizeof(float);
+    cw_params.initialize(cu, numFluxWaters*5, elementSize, "cwparams");
     if (cu.getUseDoublePrecision()){
         vector<int4> cwidx;
         cwidx.resize(0);
