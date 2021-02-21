@@ -558,7 +558,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 cu.getPeriodicBoxVecYPointer(),      
                 cu.getPeriodicBoxVecZPointer()       
             };
-            cu.executeKernel(calcRealChargeKernel, args_realc, numFluxBonds + numFluxAngles);
+            cu.executeKernel(calcRealChargeKernel, args_realc, numFluxBonds + numFluxAngles + numFluxWaters);
         }
         cout << "P1" << endl;
         void* args_self[] = {
@@ -688,7 +688,7 @@ double CudaCalcCoulForceKernel::execute(ContextImpl& context, bool includeForces
                 &cw_idx.getDevicePointer(),
                 &cw_params.getDevicePointer()
             };
-            cu.executeKernel(calcRealChargeKernel, args_realc, numFluxBonds + numFluxAngles);
+            cu.executeKernel(calcRealChargeKernel, args_realc, numFluxBonds + numFluxAngles + numFluxWaters);
         }
 
         int paddedNumAtoms = cu.getPaddedNumAtoms();
