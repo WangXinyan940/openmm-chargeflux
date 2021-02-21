@@ -9,7 +9,7 @@ extern "C" __global__ void copyCharge(
     const real4*      __restrict__  parameters
 #endif
 ){
-    for (int nwork = blockIdx.x*blockDim.x+threadIdx.x; nwork < NUM_ATOMS + NUM_DQDX_PAIRS; natom += blockDim.x*gridDim.x){
+    for (int nwork = blockIdx.x*blockDim.x+threadIdx.x; nwork < NUM_ATOMS + NUM_DQDX_PAIRS; nwork += blockDim.x*gridDim.x){
         if (nwork < NUM_ATOMS){
 #ifdef USE_PBC
             posq[indexAtom[nwork]].w = parameters[nwork].x;
@@ -40,8 +40,8 @@ extern "C" __global__ void calcRealCharge(
     real4                           periodicBoxVecY, 
     real4                           periodicBoxVecZ
 #else
-    const int*        __restrict__  cf_idx,
-    const real*       __restrict__  cf_params
+    const int4*       __restrict__  cf_idx,
+    const real2*      __restrict__  cf_params
 #endif
 ){
     for (int npair = blockIdx.x*blockDim.x+threadIdx.x; npair < NUM_FLUX_BONDS + NUM_FLUX_ANGLES + NUM_FLUX_WATERS; npair += blockDim.x*gridDim.x){
