@@ -318,7 +318,7 @@ extern "C" __global__ void printdQdX(
     const real4*          __restrict__    dqdx_val
 ){
     for (int npair = blockIdx.x*blockDim.x+threadIdx.x; npair < NUM_DQDX_PAIRS; npair += blockDim.x*gridDim.x){
-        real3 nval = dqdx_val[npair];
+        real4 nval = dqdx_val[npair];
         printf("%i %i %f %f %f\n", dqdx_dqidx[npair], dqdx_dxidx[npair], nval.x, nval.y, nval.z);
     }
 }
