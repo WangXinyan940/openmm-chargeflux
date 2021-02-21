@@ -41,7 +41,9 @@ extern "C" __global__ void calcRealCharge(
     real4                           periodicBoxVecZ
 #else
     const int4*       __restrict__  cf_idx,
-    const real2*      __restrict__  cf_params
+    const real2*      __restrict__  cf_params,
+    const int4*       __restrict__  wat_idx,
+    const real*       __restrict__  wat_params
 #endif
 ){
     for (int npair = blockIdx.x*blockDim.x+threadIdx.x; npair < NUM_FLUX_BONDS + NUM_FLUX_ANGLES + NUM_FLUX_WATERS; npair += blockDim.x*gridDim.x){
