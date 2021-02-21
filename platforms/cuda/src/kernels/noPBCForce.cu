@@ -7,8 +7,9 @@ extern "C" __global__ void calcNoPBCEnForces(
     const int*          __restrict__     pairidx0,
     const int*          __restrict__     pairidx1,
     int                                  numParticles,
-    int                                  paddedNumAtoms) {
-    int totpair = numParticles * (numParticles - 1) / 2;
+    int                                  paddedNumAtoms
+) {
+    int totpair = numParticles * (numParticles - 1) / 2
     for (int npair = blockIdx.x*blockDim.x+threadIdx.x; npair < totpair; npair += blockDim.x*gridDim.x) {
         int ii = pairidx0[npair];
         int jj = pairidx1[npair];
