@@ -67,8 +67,8 @@ extern "C" __global__ void calcRealCharge(
             atomicAdd(&posq[indexAtom[idx.x]].w, dq);
             atomicAdd(&posq[indexAtom[idx.y]].w, -dq);
 #else
-            atomicAdd(&posq[idx1].w, dq);
-            atomicAdd(&posq[idx2].w, -dq);
+            atomicAdd(&posq[idx.x].w, dq);
+            atomicAdd(&posq[idx.y].w, -dq);
 #endif
 
             int pair1 = 4 * npair;
