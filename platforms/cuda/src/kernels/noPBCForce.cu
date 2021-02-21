@@ -47,7 +47,7 @@ extern "C" __global__ void calcNoPBCExclusions(
     const real4*        __restrict__     posq,
     unsigned long long* __restrict__     forceBuffers,
     real*               __restrict__     dedq,
-    const real*         __restrict__     parameters,
+    const real4*        __restrict__     parameters,
     const int*          __restrict__     expairidx0,
     const int*          __restrict__     expairidx1,
     const int                            totpair,
