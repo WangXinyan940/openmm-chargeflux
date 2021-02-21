@@ -272,7 +272,7 @@ void ReferenceCalcCoulForceKernel::initialize(const System& system, const CoulFo
     for(int ii=0;ii<numCFWaters;ii++){
         int p1, p2, p3;
         double k1, k2, kub, b0, ub0;
-        force.getFluxWaterParameters(p1, p2, p3, k1, k2, kub, b0, ub0);
+        force.getFluxWaterParameters(ii, p1, p2, p3, k1, k2, kub, b0, ub0);
         fwater_idx[3*ii] = p1;
         fwater_idx[3*ii+1] = p2;
         fwater_idx[3*ii+2] = p3;
