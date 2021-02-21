@@ -164,11 +164,11 @@ void ReferenceCalcCoulForceKernel::updateRealCharge(vector<Vec3>& pos, Vec3* box
         int p1 = fwater_idx[3*ii+0];
         int p2 = fwater_idx[3*ii+1];
         int p3 = fwater_idx[3*ii+2];
-        double k1  = fwater_param[5*ii+0];
-        double k2  = fwater_param[5*ii+1];
-        double kub = fwater_param[5*ii+2];
-        double b0  = fwater_param[5*ii+3];
-        double ub0 = fwater_param[5*ii+4];
+        double k1  = fwater_params[5*ii+0];
+        double k2  = fwater_params[5*ii+1];
+        double kub = fwater_params[5*ii+2];
+        double b0  = fwater_params[5*ii+3];
+        double ub0 = fwater_params[5*ii+4];
         Vec3 d12,d13,d23;
         if (!ifPBC){
             d12 = ReferenceForce::getDeltaR(pos[p1], pos[p2]);
